@@ -1,0 +1,26 @@
+= terraform-digitalekanaler-microservice
+:!toc-title:
+:!toc-placement:
+:toc:
+
+// TODO: Write a sentence about what this module is for
+
+toc::[]
+
+== About
+// TODO: Write what this module does and what problem it solves
+
+== Usage
+To use this module, just add it to your terraform!
+
+// TODO: Add variables to the module example!
+
+[source, hcl]
+----
+module "microservice" {
+  source = "github.com/nsbno/terraform-digitalekanaler-microservice?ref=x.y.z"
+  
+  
+}
+----
+
