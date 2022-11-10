@@ -3,7 +3,12 @@ variable "service_name" {
   type        = string
 }
 
-variable "integration_url" {
+variable "domain_name" {
+  description = ""
+  type        = string
+}
+
+variable "listener_arn" {
   description = ""
   type        = string
 }
