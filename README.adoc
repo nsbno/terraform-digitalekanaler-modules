@@ -1,4 +1,4 @@
-= terraform-digitalekanaler-microservice
+= terraform-digitalekanaler-modules
 :!toc-title:
 :!toc-placement:
 :toc:
@@ -18,7 +18,7 @@ To use this module, just add it to your terraform!
 [source, hcl]
 ----
 module "microservice" {
-  source = "github.com/nsbno/terraform-digitalekanaler-microservice?ref=x.y.z"
+  source = "github.com/nsbno/terraform-digitalekanaler-modules?ref=x.y.z/microservice-apigw-proxy"
   
   
 }
