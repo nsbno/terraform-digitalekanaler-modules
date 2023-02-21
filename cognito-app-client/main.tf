@@ -24,7 +24,6 @@ resource "aws_ssm_parameter" "client_id" {
   count = local.should_add_secret_to_secrets_manager
   name  = "/config/${var.app_name}/oauth2/clientId"
   type  = "String"
-
   value = aws_cognito_user_pool_client.this.id
 }
 
