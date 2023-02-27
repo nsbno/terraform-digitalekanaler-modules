@@ -3,8 +3,8 @@ data "aws_ssm_parameter" "user_pool" {
 }
 
 resource "aws_cognito_resource_server" "this" {
-  identifier   = var.app_name
-  name         = var.app_name
+  name         = var.resource_name
+  identifier   = var.resource_identifier
   user_pool_id = data.aws_ssm_parameter.user_pool.value
 
   dynamic "scope" {

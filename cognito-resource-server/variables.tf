@@ -1,5 +1,10 @@
-variable "app_name" {
-  description = "The name of the application the resource server is named after"
+variable "resource_name" {
+  description = "A friendly name for the resource server."
+  type        = string
+}
+
+variable "resource_identifier" {
+  description = "The unique identifier for the resource server."
   type        = string
 }
 
