@@ -5,3 +5,4 @@
 # Terraform
 .terraform/
 *.tfstate
+*.lock.hcl

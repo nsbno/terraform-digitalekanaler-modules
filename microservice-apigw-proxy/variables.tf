@@ -20,6 +20,6 @@ variable "context_path" {
 
   validation {
     condition     = var.context_path == "" || can(regex("^/.", var.context_path))
-    error_message = "Context path must start with /"
+    error_message = "Context path must start with /."
   }
 }
