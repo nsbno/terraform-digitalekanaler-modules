@@ -28,7 +28,7 @@ resource "aws_apigatewayv2_integration" "this" {
   }
 
   request_parameters = {
-    "overwrite:path"        = "/$request.path.proxy"
+    "overwrite:path"        = "${var.context_path}/$request.path.proxy"
     "overwrite:header.host" = var.domain_name
   }
 }

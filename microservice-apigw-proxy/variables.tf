@@ -4,11 +4,22 @@ variable "service_name" {
 }
 
 variable "domain_name" {
-  description = ""
+  description = "The domain name of the service being proxied"
   type        = string
 }
 
 variable "listener_arn" {
-  description = ""
+  description = "AWS ALB listener ARN"
   type        = string
+}
+
+variable "context_path" {
+  type        = string
+  description = "An optional context path that will prefix all requests to the service. Must start with / if defined"
+  default     = ""
+
+  validation {
+    condition     = var.context_path == "" || can(regex("^/.", var.context_path))
+    error_message = "Context path must start with /"
+  }
 }
