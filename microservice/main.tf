@@ -4,10 +4,17 @@ locals {
   service_account_id = "184465511165"
   current_region     = data.aws_region.current.name
 
+
   all_environment_secrets = merge(
     aws_ssm_parameter.environment_secrets,
     aws_ssm_parameter.manual_environment_secrets,
     data.aws_ssm_parameter.external_environment_secrets,
+  )
+
+  image_tag = (
+    aws_ssm_parameter.version.value == "latest"
+    ? aws_ssm_parameter.version.value
+    : "${aws_ssm_parameter.version.value}-SHA1"
   )
 }
 
@@ -23,7 +30,7 @@ module "task" {
 
   application_container = {
     name     = "${local.name_prefix}-${var.name}"
-    image    = var.image
+    image    = local.image_tag
     port     = var.port
     protocol = "HTTP"
     cpu      = 0
@@ -194,6 +201,12 @@ data "aws_iam_policy_document" "task_execution_role" {
     actions   = ["kms:Decrypt"]
     resources = [aws_kms_key.application_key.arn, data.aws_kms_alias.common_config_key.target_key_arn]
   }
+
+  # TODO: What is this?
+  statement {
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "task_execution_role" {
@@ -206,3 +219,20 @@ resource "aws_iam_role_policy_attachment" "task_execution_role" {
   policy_arn = aws_iam_policy.task_execution_role.arn
 }
 
+module "api_gateway" {
+  source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
+  service_name = var.name
+  domain_name  = var.internal_domain_name
+  listener_arn = local.shared_config.lb_internal_listener_arn
+}
+
+
+resource "aws_ssm_parameter" "version" {
+  name      = "/${local.name_prefix}/versions/${local.name_prefix}-${var.name}"
+  value     = "latest"
+  type      = "String"
+  overwrite = true
+  lifecycle {
+    ignore_changes = [value]
+  }
+}
