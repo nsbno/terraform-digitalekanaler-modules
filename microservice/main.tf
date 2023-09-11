@@ -3,6 +3,8 @@ locals {
   shared_config      = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   service_account_id = "184465511165"
   current_region     = data.aws_region.current.name
+
+
 }
 
 module "task" {
@@ -22,18 +24,30 @@ module "task" {
     protocol = "HTTP"
     cpu      = 0
 
-    environment = merge({
-      DD_ENV               = var.environment
-      DD_SERVICE           = var.name
-      DD_VERSION           = var.image
-      DD_SERVICE_MAPPING   = "postgresql:ticket, kafka:ticket"
-      DD_LOGS_INJECTION    = "true"
-      DD_TRACE_SAMPLE_RATE = "1"
+    environment = merge(
+      {
+        DD_ENV               = var.environment
+        DD_SERVICE           = var.name
+        DD_VERSION           = var.image
+        DD_SERVICE_MAPPING   = "postgresql:ticket, kafka:ticket"
+        DD_LOGS_INJECTION    = "true"
+        DD_TRACE_SAMPLE_RATE = "1"
+        JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar -XX:FlightRecorderOptions=stackdepth=256 -Xmx1024m -Xms1024m"
+      },
+      var.environment_variables
+    )
 
-      JAVA_TOOL_OPTIONS = "-javaagent:/application/dd-java-agent.jar -XX:FlightRecorderOptions=stackdepth=256 -Xmx1024m -Xms1024m"
-    }, var.environment_variables)
-
-    secrets = var.secrets
+    secrets = merge(
+      {
+        for k, v in aws_ssm_parameter.environment_secrets : k => v.arn
+      },
+      {
+        for k, v in aws_ssm_parameter.manual_environment_secrets : k => v.arn
+      },
+      {
+        for k, v in data.aws_ssm_parameter.external_environment_secrets : k => v.arn
+      },
+    )
 
     extra_options = {
       dockerLabels = {
@@ -150,17 +164,29 @@ module "task" {
   propagate_tags = "TASK_DEFINITION"
 }
 
-resource "aws_ssm_parameter" "manuel_environment_secrets" {
+resource "aws_ssm_parameter" "environment_secrets" {
+  for_each = var.environment_secrets
+
+  name   = "/config/${var.name}/${each.key}"
+  type   = "SecureString"
+  value  = each.value
+  key_id = var.key_id
+}
+
+resource "aws_ssm_parameter" "manual_environment_secrets" {
   for_each = var.manual_environment_secrets
 
-  name  = each.value
-  type  = "SecureString"
-  value = "null"
-
+  name   = each.value
+  type   = "SecureString"
+  value  = "null"
   key_id = var.key_id
 
   lifecycle {
     ignore_changes = [value]
   }
+}
 
+data "aws_ssm_parameter" "external_environment_secrets" {
+  for_each = var.external_environment_secrets
+  name     = each.value
 }

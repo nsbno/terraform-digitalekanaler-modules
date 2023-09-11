@@ -1,8 +1,12 @@
+data "aws_region" "current" {}
+
+data "aws_kms_alias" "common_config_key" {
+  name = "alias/common_config_key"
+}
+
 data "aws_ssm_parameter" "shared_config" {
   name = "/digitalekanaler/shared-config"
 }
-
-data "aws_region" "current" {}
 
 data "aws_ssm_parameter" "datadog_apikey" {
   name = "/external/datadog/apikey"

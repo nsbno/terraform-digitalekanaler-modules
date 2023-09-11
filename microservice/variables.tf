@@ -18,10 +18,6 @@ variable "environment_variables" {
   type = map(string)
 }
 
-variable "secrets" {
-  type = map(string)
-}
-
 variable "min_capacity" {
   type = number
 }
@@ -38,10 +34,18 @@ variable "external_domain_name" {
   type = string
 }
 
+variable "key_id" {
+  type = string
+}
+
+variable "environment_secrets" {
+  type = map(string)
+}
+
 variable "manual_environment_secrets" {
   type = map(string)
 }
 
-variable "key_id" {
-  type = string
+variable "external_environment_secrets" {
+  type = map(string)
 }
