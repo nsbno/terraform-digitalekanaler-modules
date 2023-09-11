@@ -34,7 +34,14 @@ variable "internal_domain_name" {
   type = string
 }
 
-
 variable "external_domain_name" {
+  type = string
+}
+
+variable "manual_environment_secrets" {
+  type = map(string)
+}
+
+variable "key_id" {
   type = string
 }
