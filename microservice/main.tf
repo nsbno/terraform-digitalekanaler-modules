@@ -4,7 +4,11 @@ locals {
   service_account_id = "184465511165"
   current_region     = data.aws_region.current.name
 
-
+  all_environment_secrets = merge(
+    aws_ssm_parameter.environment_secrets,
+    aws_ssm_parameter.manual_environment_secrets,
+    data.aws_ssm_parameter.external_environment_secrets,
+  )
 }
 
 module "task" {
@@ -37,17 +41,7 @@ module "task" {
       var.environment_variables
     )
 
-    secrets = merge(
-      {
-        for k, v in aws_ssm_parameter.environment_secrets : k => v.arn
-      },
-      {
-        for k, v in aws_ssm_parameter.manual_environment_secrets : k => v.arn
-      },
-      {
-        for k, v in data.aws_ssm_parameter.external_environment_secrets : k => v.arn
-      },
-    )
+    secrets = { for name, param in local.all_environment_secrets : name => param.arn }
 
     extra_options = {
       dockerLabels = {
@@ -170,7 +164,7 @@ resource "aws_ssm_parameter" "environment_secrets" {
   name   = "/config/${var.name}/${each.key}"
   type   = "SecureString"
   value  = each.value
-  key_id = var.key_id
+  key_id = aws_kms_key.application_key.id
 }
 
 resource "aws_ssm_parameter" "manual_environment_secrets" {
@@ -179,14 +173,36 @@ resource "aws_ssm_parameter" "manual_environment_secrets" {
   name   = each.value
   type   = "SecureString"
   value  = "null"
-  key_id = var.key_id
+  key_id = aws_kms_key.application_key.id
 
   lifecycle {
     ignore_changes = [value]
   }
 }
 
-data "aws_ssm_parameter" "external_environment_secrets" {
-  for_each = var.external_environment_secrets
-  name     = each.value
+resource "aws_kms_key" "application_key" {
+  description = "Key for ${local.name_prefix}-${var.name}"
 }
+
+data "aws_iam_policy_document" "task_execution_role" {
+  statement {
+    actions   = ["ssm:GetParameters"]
+    resources = [for _, param in local.all_environment_secrets : param.arn]
+  }
+
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [aws_kms_key.application_key.arn, data.aws_kms_alias.common_config_key.target_key_arn]
+  }
+}
+
+resource "aws_iam_policy" "task_execution_role" {
+  name   = "${local.name_prefix}-${var.name}-ecs-task-policy"
+  policy = data.aws_iam_policy_document.task_execution_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role" {
+  role       = module.task.task_execution_role_name
+  policy_arn = aws_iam_policy.task_execution_role.arn
+}
+

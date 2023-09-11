@@ -34,10 +34,6 @@ variable "external_domain_name" {
   type = string
 }
 
-variable "key_id" {
-  type = string
-}
-
 variable "environment_secrets" {
   type = map(string)
 }
