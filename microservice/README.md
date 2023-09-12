@@ -1,6 +1,6 @@
 # Common module for the microservices at Vy Digital
 
-## How to change and delete `manual_environment_secrets`
+## How to change or delete parameters defined in `manual_environment_secrets`
 
 To avoid deleting the SSM Parameters created by `manual_environment_secrets` by accident, the `prevent_destroy` flag is set on these resource. This means that we must take some extra steps when changing or deleting them.
 
@@ -17,13 +17,13 @@ To remove a parameter, you must first move the SSM Parameter to a terraform reso
 
 ```hcl
 resource "aws_ssm_parameter" "delete_me" {
-  name = "/config/${var.application_name}/delete_me"
-  type = "String"
+  name  = "/config/${var.application_name}/delete_me"
+  type  = "String"
   value = "null"
 }
 
 moved {
   from = module.microservice.aws_ssm_parameter.manual_environment_secrets["SOME_PARAMETER"]
-  to = aws_ssm_parameter.delete_me
+  to   = aws_ssm_parameter.delete_me
 }
 ```
