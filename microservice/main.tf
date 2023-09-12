@@ -183,7 +183,8 @@ resource "aws_ssm_parameter" "manual_environment_secrets" {
   key_id = aws_kms_key.application_key.id
 
   lifecycle {
-    ignore_changes = [value]
+    ignore_changes  = [value]
+    prevent_destroy = true
   }
 }
 
