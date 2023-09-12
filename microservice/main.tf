@@ -39,7 +39,6 @@ module "task" {
         DD_ENV               = var.environment
         DD_SERVICE           = var.application_name
         DD_VERSION           = var.datadog_version_tag
-        DD_SERVICE_MAPPING   = "postgresql:ticket, kafka:ticket"
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
         JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar -XX:FlightRecorderOptions=stackdepth=256 -Xmx1024m -Xms1024m"
