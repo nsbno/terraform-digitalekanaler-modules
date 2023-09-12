@@ -6,7 +6,6 @@ variable "environment" {
   type = string
 }
 
-
 variable "port" {
   type = number
 }

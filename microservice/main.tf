@@ -18,6 +18,11 @@ locals {
   )
 }
 
+#########################################
+#                                       #
+# Fargate Task                          #
+#                                       #
+#########################################
 module "task" {
   source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.9.0"
   name_prefix        = "${local.name_prefix}-${var.name}"
@@ -165,6 +170,11 @@ module "task" {
   propagate_tags = "TASK_DEFINITION"
 }
 
+#########################################
+#                                       #
+# SSM parameter for secret referencing  #
+#                                       #
+#########################################
 resource "aws_ssm_parameter" "environment_secrets" {
   for_each = var.environment_secrets
 
@@ -191,6 +201,11 @@ resource "aws_kms_key" "application_key" {
   description = "Key for ${local.name_prefix}-${var.name}"
 }
 
+#########################################
+#                                       #
+# Task execution role                   #
+#                                       #
+#########################################
 data "aws_iam_policy_document" "task_execution_role" {
   statement {
     actions   = ["ssm:GetParameters"]
@@ -202,7 +217,7 @@ data "aws_iam_policy_document" "task_execution_role" {
     resources = [aws_kms_key.application_key.arn, data.aws_kms_alias.common_config_key.target_key_arn]
   }
 
-  # TODO: What is this?
+  # TODO: Do we need this?
   statement {
     actions   = ["cloudwatch:PutMetricData"]
     resources = ["*"]
@@ -219,6 +234,23 @@ resource "aws_iam_role_policy_attachment" "task_execution_role" {
   policy_arn = aws_iam_policy.task_execution_role.arn
 }
 
+#########################################
+#                                       #
+# Internal load balancer integration    #
+#                                       #
+#########################################
+resource "aws_route53_record" "internal_vydev_io_record" {
+  zone_id = data.aws_route53_zone.internal_vydev_io_zone.id
+  name    = local.internal_domain_name
+  type    = "A"
+
+  alias {
+    evaluate_target_health = false
+    name                   = data.aws_lb.internal_lb.dns_name
+    zone_id                = data.aws_lb.internal_lb.zone_id
+  }
+}
+
 module "api_gateway" {
   source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
   service_name = var.name
@@ -226,7 +258,11 @@ module "api_gateway" {
   listener_arn = local.shared_config.lb_internal_listener_arn
 }
 
-
+#########################################
+#                                       #
+# TODO                                  #
+#                                       #
+#########################################
 resource "aws_ssm_parameter" "version" {
   name      = "/${local.name_prefix}/versions/${local.name_prefix}-${var.name}"
   value     = "latest"
