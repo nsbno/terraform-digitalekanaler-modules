@@ -3,18 +3,12 @@ locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   service_account_id   = "184465511165"
   current_region       = data.aws_region.current.name
-  internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
+  internal_domain_name = "${var.application_name}.${local.shared_config.internal_hosted_zone_name}"
 
   all_environment_secrets = merge(
     aws_ssm_parameter.environment_secrets,
     aws_ssm_parameter.manual_environment_secrets,
     data.aws_ssm_parameter.external_environment_secrets,
-  )
-
-  image_tag = (
-    aws_ssm_parameter.version.value == "latest"
-    ? aws_ssm_parameter.version.value
-    : "${aws_ssm_parameter.version.value}-SHA1"
   )
 }
 
@@ -25,7 +19,7 @@ locals {
 #########################################
 module "task" {
   source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.9.0"
-  name_prefix        = "${local.name_prefix}-${var.name}"
+  name_prefix        = "${local.name_prefix}-${var.application_name}"
   vpc_id             = local.shared_config.vpc_id
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
@@ -34,17 +28,17 @@ module "task" {
   memory = 4096
 
   application_container = {
-    name     = "${local.name_prefix}-${var.name}"
-    image    = local.image_tag
-    port     = var.port
+    name     = "${local.name_prefix}-${var.application_name}"
+    image    = var.docker_image
+    port     = var.port_number
     protocol = "HTTP"
     cpu      = 0
 
     environment = merge(
       {
         DD_ENV               = var.environment
-        DD_SERVICE           = var.name
-        DD_VERSION           = local.image_tag
+        DD_SERVICE           = var.application_name
+        DD_VERSION           = var.datadog_version_tag
         DD_SERVICE_MAPPING   = "postgresql:ticket, kafka:ticket"
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
@@ -58,8 +52,8 @@ module "task" {
     extra_options = {
       dockerLabels = {
         "com.datadoghq.tags.env"     = var.environment
-        "com.datadoghq.tags.service" = var.name
-        "com.datadoghq.tags.version" = local.image_tag
+        "com.datadoghq.tags.service" = var.application_name
+        "com.datadoghq.tags.version" = var.datadog_version_tag
       }
       logConfiguration = {
         logDriver = "awsfirelens",
@@ -67,9 +61,9 @@ module "task" {
           Name       = "datadog",
           Host       = "http-intake.logs.datadoghq.eu",
           TLS        = "on"
-          dd_service = var.name,
+          dd_service = var.application_name,
           dd_source  = "java",
-          dd_tags    = "${var.name}:fluentbit",
+          dd_tags    = "${var.application_name}:fluentbit",
           provider   = "ecs"
         }
         secretOptions = [{
@@ -82,8 +76,8 @@ module "task" {
 
   deployment_minimum_healthy_percent = 100
   autoscaling = {
-    min_capacity = var.min_capacity
-    max_capacity = var.max_capacity
+    min_capacity = var.min_number_of_instances
+    max_capacity = var.max_number_of_instances
     metric_type  = "ECSServiceAverageCPUUtilization"
     target_value = "50"
   }
@@ -98,7 +92,7 @@ module "task" {
 
       environment = {
         DD_ENV                         = var.environment
-        DD_SERVICE                     = var.name
+        DD_SERVICE                     = var.application_name
         ECS_FARGATE                    = "true"
         DD_SITE                        = "datadoghq.eu"
         DD_APM_ENABLED                 = "true"
@@ -146,7 +140,7 @@ module "task" {
   ]
 
   lb_health_check = {
-    port = var.port
+    port = var.port_number
     path = "/health"
   }
 
@@ -155,7 +149,7 @@ module "task" {
       listener_arn      = local.shared_config.lb_listener_arn
       security_group_id = local.shared_config.lb_security_group_id
       conditions = [
-        { host_header = var.external_domain_name },
+        { host_header = var.public_load_balancer_domain_name },
       ]
     },
     {
@@ -178,7 +172,7 @@ module "task" {
 resource "aws_ssm_parameter" "environment_secrets" {
   for_each = var.environment_secrets
 
-  name   = "/config/${var.name}/${each.key}"
+  name   = "/config/${var.application_name}/${each.key}"
   type   = "SecureString"
   value  = each.value
   key_id = aws_kms_key.application_key.id
@@ -198,7 +192,7 @@ resource "aws_ssm_parameter" "manual_environment_secrets" {
 }
 
 resource "aws_kms_key" "application_key" {
-  description = "Key for ${local.name_prefix}-${var.name}"
+  description = "Key for ${local.name_prefix}-${var.application_name}"
 }
 
 #########################################
@@ -225,7 +219,7 @@ data "aws_iam_policy_document" "task_execution_role" {
 }
 
 resource "aws_iam_policy" "task_execution_role" {
-  name   = "${local.name_prefix}-${var.name}-ecs-task-policy"
+  name   = "${local.name_prefix}-${var.application_name}-ecs-task-policy"
   policy = data.aws_iam_policy_document.task_execution_role.json
 }
 
@@ -253,22 +247,7 @@ resource "aws_route53_record" "internal_vydev_io_record" {
 
 module "api_gateway" {
   source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
-  service_name = var.name
+  service_name = var.application_name
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
-}
-
-#########################################
-#                                       #
-# TODO                                  #
-#                                       #
-#########################################
-resource "aws_ssm_parameter" "version" {
-  name      = "/${local.name_prefix}/versions/${local.name_prefix}-${var.name}"
-  value     = "latest"
-  type      = "String"
-  overwrite = true
-  lifecycle {
-    ignore_changes = [value]
-  }
 }
