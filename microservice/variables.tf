@@ -23,10 +23,6 @@ variable "max_capacity" {
   type = number
 }
 
-variable "internal_domain_name" {
-  type = string
-}
-
 variable "external_domain_name" {
   type = string
 }

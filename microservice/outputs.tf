@@ -13,3 +13,7 @@ output "task_execution_role_name" {
 output "application_key_id" {
   value = aws_kms_key.application_key.id
 }
+
+output "internal_domain_name" {
+  value = local.internal_domain_name
+}

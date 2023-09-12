@@ -1,9 +1,9 @@
 locals {
-  name_prefix        = "digitalekanaler"
-  shared_config      = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  service_account_id = "184465511165"
-  current_region     = data.aws_region.current.name
-
+  name_prefix          = "digitalekanaler"
+  shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
+  service_account_id   = "184465511165"
+  current_region       = data.aws_region.current.name
+  internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
   all_environment_secrets = merge(
     aws_ssm_parameter.environment_secrets,
@@ -39,7 +39,7 @@ module "task" {
       {
         DD_ENV               = var.environment
         DD_SERVICE           = var.name
-        DD_VERSION           = var.image
+        DD_VERSION           = local.image_tag
         DD_SERVICE_MAPPING   = "postgresql:ticket, kafka:ticket"
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
@@ -54,7 +54,7 @@ module "task" {
       dockerLabels = {
         "com.datadoghq.tags.env"     = var.environment
         "com.datadoghq.tags.service" = var.name
-        "com.datadoghq.tags.version" = var.image
+        "com.datadoghq.tags.version" = local.image_tag
       }
       logConfiguration = {
         logDriver = "awsfirelens",
@@ -157,7 +157,7 @@ module "task" {
       listener_arn      = local.shared_config.lb_internal_listener_arn
       security_group_id = local.shared_config.lb_internal_security_group_id
       conditions = [
-        { host_header = var.internal_domain_name },
+        { host_header = local.internal_domain_name },
       ]
     }
   ]
@@ -222,7 +222,7 @@ resource "aws_iam_role_policy_attachment" "task_execution_role" {
 module "api_gateway" {
   source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
   service_name = var.name
-  domain_name  = var.internal_domain_name
+  domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
 }
 
