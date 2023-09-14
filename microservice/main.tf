@@ -18,8 +18,8 @@ locals {
 #                                       #
 #########################################
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.9.0"
-  name_prefix        = "${local.name_prefix}-${var.application_name}"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.12.1"
+  application_name   = "${local.name_prefix}-${var.application_name}"
   vpc_id             = local.shared_config.vpc_id
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
@@ -117,7 +117,7 @@ module "task" {
     },
     {
       name              = "log-router"
-      image             = data.aws_ssm_parameter.log_router_image.value
+      image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
       essential         = true
       cpu               = 0
       memory_soft_limit = 100
