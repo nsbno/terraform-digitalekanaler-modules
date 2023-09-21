@@ -2,7 +2,6 @@ locals {
   name_prefix          = "digitalekanaler"
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   service_account_id   = "184465511165"
-  current_region       = data.aws_region.current.name
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 }
 

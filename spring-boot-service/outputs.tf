@@ -17,7 +17,3 @@ output "application_key_id" {
 output "application_key_arn" {
   value = aws_kms_key.application_key.arn
 }
-
-output "internal_domain_name" {
-  value = local.internal_domain_name
-}
