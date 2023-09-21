@@ -16,11 +16,6 @@ data "aws_ssm_parameter" "log_router_image" {
   name = "/aws/service/aws-for-fluent-bit/stable"
 }
 
-data "aws_ssm_parameter" "external_environment_secrets" {
-  for_each = var.external_environment_secrets
-  name     = each.value
-}
-
 data "aws_lb" "internal_lb" {
   arn = local.shared_config.lb_internal_arn
 }

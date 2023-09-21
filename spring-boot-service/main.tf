@@ -3,13 +3,7 @@ locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   service_account_id   = "184465511165"
   current_region       = data.aws_region.current.name
-  internal_domain_name = "${var.application_name}.${local.shared_config.internal_hosted_zone_name}"
-
-  all_environment_secrets = merge(
-    aws_ssm_parameter.environment_secrets,
-    aws_ssm_parameter.manual_environment_secrets,
-    data.aws_ssm_parameter.external_environment_secrets,
-  )
+  internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 }
 
 #########################################
@@ -19,7 +13,7 @@ locals {
 #########################################
 module "task" {
   source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.12.1"
-  application_name   = "${local.name_prefix}-${var.application_name}"
+  application_name   = "${local.name_prefix}-${var.name}"
   vpc_id             = local.shared_config.vpc_id
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
@@ -28,31 +22,31 @@ module "task" {
   memory = 4096
 
   application_container = {
-    name     = "${local.name_prefix}-${var.application_name}"
+    name     = "${local.name_prefix}-${var.name}"
     image    = var.docker_image
-    port     = var.port_number
+    port     = var.port
     protocol = "HTTP"
     cpu      = 0
 
     environment = merge(
       {
-        DD_ENV               = var.environment
-        DD_SERVICE           = var.application_name
-        DD_VERSION           = var.datadog_version_tag
+        DD_ENV               = var.datadog_tags.environment
+        DD_SERVICE           = var.name
+        DD_VERSION           = var.datadog_tags.version
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
-        JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar -XX:FlightRecorderOptions=stackdepth=256 -Xmx1024m -Xms1024m"
+        JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
       },
-      var.environment_variables
+      var.environment
     )
 
-    secrets = { for name, param in local.all_environment_secrets : name => param.arn }
+    secrets = var.secrets
 
     extra_options = {
       dockerLabels = {
-        "com.datadoghq.tags.env"     = var.environment
-        "com.datadoghq.tags.service" = var.application_name
-        "com.datadoghq.tags.version" = var.datadog_version_tag
+        "com.datadoghq.tags.env"     = var.datadog_tags.environment
+        "com.datadoghq.tags.service" = var.name
+        "com.datadoghq.tags.version" = var.datadog_tags.version
       }
       logConfiguration = {
         logDriver = "awsfirelens",
@@ -60,9 +54,9 @@ module "task" {
           Name       = "datadog",
           Host       = "http-intake.logs.datadoghq.eu",
           TLS        = "on"
-          dd_service = var.application_name,
+          dd_service = var.name,
           dd_source  = "java",
-          dd_tags    = "${var.application_name}:fluentbit",
+          dd_tags    = "${var.name}:fluentbit",
           provider   = "ecs"
         }
         secretOptions = [{
@@ -75,10 +69,10 @@ module "task" {
 
   deployment_minimum_healthy_percent = 100
   autoscaling = {
-    min_capacity = var.min_number_of_instances
-    max_capacity = var.max_number_of_instances
-    metric_type  = "ECSServiceAverageCPUUtilization"
-    target_value = "50"
+    min_capacity = var.autoscaling.min_number_of_instances
+    max_capacity = var.autoscaling.max_number_of_instances
+    metric_type  = var.autoscaling.metric_type
+    target_value = tostring(var.autoscaling.target)
   }
 
   sidecar_containers = [
@@ -90,8 +84,8 @@ module "task" {
       memory_hard_limit = 384
 
       environment = {
-        DD_ENV                         = var.environment
-        DD_SERVICE                     = var.application_name
+        DD_ENV                         = var.datadog_tags.environment
+        DD_SERVICE                     = var.name
         ECS_FARGATE                    = "true"
         DD_SITE                        = "datadoghq.eu"
         DD_APM_ENABLED                 = "true"
@@ -139,7 +133,7 @@ module "task" {
   ]
 
   lb_health_check = {
-    port = var.port_number
+    port = var.port
     path = "/health"
   }
 
@@ -165,106 +159,16 @@ module "task" {
 
 #########################################
 #                                       #
-# SSM parameter for secret referencing  #
+# Encryption key                        #
 #                                       #
 #########################################
-resource "aws_ssm_parameter" "environment_secrets" {
-  for_each = var.environment_secrets
-
-  name   = "/config/${var.application_name}/${each.key}"
-  type   = "SecureString"
-  value  = each.value
-  key_id = aws_kms_key.application_key.id
-}
-
-resource "aws_ssm_parameter" "manual_environment_secrets" {
-  for_each = var.manual_environment_secrets
-
-  name   = each.value
-  type   = "SecureString"
-  value  = "null"
-  key_id = aws_kms_key.application_key.id
-
-  lifecycle {
-    ignore_changes  = [value]
-    prevent_destroy = true
-  }
-}
-
 resource "aws_kms_key" "application_key" {
-  description = "Key for ${local.name_prefix}-${var.application_name}"
+  description = "Key for ${local.name_prefix}-${var.name}"
 }
 
-#########################################
-#                                       #
-# Task execution role                   #
-#                                       #
-#########################################
-data "aws_iam_policy_document" "internal_parameters" {
-  statement {
-    actions   = ["ssm:GetParameters"]
-    resources = [for param in merge(aws_ssm_parameter.environment_secrets, aws_ssm_parameter.manual_environment_secrets) : param.arn]
-  }
-
-  statement {
-    actions   = ["kms:Decrypt"]
-    resources = [aws_kms_key.application_key.arn]
-  }
-}
-
-data "aws_iam_policy_document" "external_parameters" {
-  statement {
-    actions = ["ssm:GetParameters"]
-    resources = concat(
-      [for param in data.aws_ssm_parameter.external_environment_secrets : param.arn],
-      [data.aws_ssm_parameter.datadog_apikey.arn]
-    )
-  }
-
-  statement {
-    actions   = ["kms:Decrypt"]
-    resources = [data.aws_kms_alias.common_config_key.target_key_arn]
-  }
-}
-
-resource "aws_iam_policy" "internal_parameters" {
-  name   = "${local.name_prefix}-${var.application_name}-ecs-task-policy"
-  policy = data.aws_iam_policy_document.internal_parameters.json
-}
-
-resource "aws_iam_policy" "external_parameters" {
-  name   = "${local.name_prefix}-${var.application_name}-common-config-policy"
-  policy = data.aws_iam_policy_document.external_parameters.json
-}
-
-resource "aws_iam_role_policy_attachment" "internal_parameters_attachment" {
-  role       = module.task.task_execution_role_name
-  policy_arn = aws_iam_policy.internal_parameters.arn
-}
-
-resource "aws_iam_role_policy_attachment" "external_parameters_attachment" {
-  role       = module.task.task_execution_role_name
-  policy_arn = aws_iam_policy.external_parameters.arn
-}
-
-#########################################
-#                                       #
-# Task role                             #
-#                                       #
-#########################################
-
-# TODO: Do we need this?
-data "aws_iam_policy_document" "task" {
-  statement {
-    actions   = ["cloudwatch:PutMetricData"]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "task" {
-  name   = "${var.application_name}-task-role-permissions"
-  role   = module.task.task_role_name
-  policy = data.aws_iam_policy_document.task.json
+resource "aws_kms_alias" "application_key_alias" {
+  name          = "alias/${local.name_prefix}-${var.name}"
+  target_key_id = aws_kms_key.application_key.id
 }
 
 #########################################
@@ -286,7 +190,7 @@ resource "aws_route53_record" "internal_vydev_io_record" {
 
 module "api_gateway" {
   source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
-  service_name = var.application_name
+  service_name = var.name
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
 }
