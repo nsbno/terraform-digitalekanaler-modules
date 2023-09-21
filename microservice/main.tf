@@ -200,32 +200,71 @@ resource "aws_kms_key" "application_key" {
 # Task execution role                   #
 #                                       #
 #########################################
-data "aws_iam_policy_document" "task_execution_role" {
+data "aws_iam_policy_document" "internal_parameters" {
   statement {
     actions   = ["ssm:GetParameters"]
-    resources = [for _, param in local.all_environment_secrets : param.arn]
+    resources = [for param in merge(aws_ssm_parameter.environment_secrets, aws_ssm_parameter.manual_environment_secrets) : param.arn]
   }
 
   statement {
     actions   = ["kms:Decrypt"]
-    resources = [aws_kms_key.application_key.arn, data.aws_kms_alias.common_config_key.target_key_arn]
+    resources = [aws_kms_key.application_key.arn]
+  }
+}
+
+data "aws_iam_policy_document" "external_parameters" {
+  statement {
+    actions = ["ssm:GetParameters"]
+    resources = concat(
+      [for param in data.aws_ssm_parameter.external_environment_secrets : param.arn],
+      [data.aws_ssm_parameter.datadog_apikey.arn]
+    )
   }
 
-  # TODO: Do we need this?
+  statement {
+    actions   = ["kms:Decrypt"]
+    resources = [data.aws_kms_alias.common_config_key.target_key_arn]
+  }
+}
+
+resource "aws_iam_policy" "internal_parameters" {
+  name   = "${local.name_prefix}-${var.application_name}-ecs-task-policy"
+  policy = data.aws_iam_policy_document.internal_parameters.json
+}
+
+resource "aws_iam_policy" "external_parameters" {
+  name   = "${local.name_prefix}-${var.application_name}-common-config-policy"
+  policy = data.aws_iam_policy_document.external_parameters.json
+}
+
+resource "aws_iam_role_policy_attachment" "internal_parameters_attachment" {
+  role       = module.task.task_execution_role_name
+  policy_arn = aws_iam_policy.internal_parameters.arn
+}
+
+resource "aws_iam_role_policy_attachment" "external_parameters_attachment" {
+  role       = module.task.task_execution_role_name
+  policy_arn = aws_iam_policy.external_parameters.arn
+}
+
+#########################################
+#                                       #
+# Task role                             #
+#                                       #
+#########################################
+
+# TODO: Do we need this?
+data "aws_iam_policy_document" "task" {
   statement {
     actions   = ["cloudwatch:PutMetricData"]
     resources = ["*"]
   }
 }
 
-resource "aws_iam_policy" "task_execution_role" {
-  name   = "${local.name_prefix}-${var.application_name}-ecs-task-policy"
-  policy = data.aws_iam_policy_document.task_execution_role.json
-}
-
-resource "aws_iam_role_policy_attachment" "task_execution_role" {
-  role       = module.task.task_execution_role_name
-  policy_arn = aws_iam_policy.task_execution_role.arn
+resource "aws_iam_role_policy" "task" {
+  name   = "${var.application_name}-task-role-permissions"
+  role   = module.task.task_role_name
+  policy = data.aws_iam_policy_document.task.json
 }
 
 #########################################
