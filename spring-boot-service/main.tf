@@ -36,10 +36,10 @@ module "task" {
         DD_TRACE_SAMPLE_RATE = "1"
         JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
       },
-      var.environment
+      var.environment_variables
     )
 
-    secrets = var.secrets
+    secrets = var.environment_secrets
 
     extra_options = {
       dockerLabels = {
