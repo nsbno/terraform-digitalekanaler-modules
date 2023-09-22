@@ -67,6 +67,7 @@ module "task" {
   }
 
   deployment_minimum_healthy_percent = 100
+
   autoscaling = {
     min_capacity = var.autoscaling.min_number_of_instances
     max_capacity = var.autoscaling.max_number_of_instances
