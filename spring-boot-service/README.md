@@ -1,6 +1,6 @@
 # spring-boot-service
 
-The spring-boot-service terraform module has the basic infrastructure that you need to run a backend service at Vy Digital. The service will be avalilable at `/services/application_name/*`.
+The spring-boot-service terraform module has the basic infrastructure that you need to run a backend service at Vy Digital.
 
 What you get from the module:
 
@@ -14,12 +14,12 @@ What you get from the module:
 
 ```hcl
 locals {
-  application_name = "ticket"
+  application_name = "" # TODO
   application_port = 8080
-  environment      = "prod"
   commit_sha       = "" # TODO
-  docker_image     = "" # TODO
   database_url     = "" # TODO
+  docker_image     = "" # TODO
+  environment      = "prod"
 }
 
 module "spring_boot_service" {
