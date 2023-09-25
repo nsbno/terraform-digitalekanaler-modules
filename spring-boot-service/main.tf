@@ -3,6 +3,10 @@ locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   service_account_id   = "184465511165"
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
+
+  datadog_agent_cpu = 100
+  log_router_cpu    = 100
+  application_cpu   = var.cpu - datadog_agent_cpu - log_router_cpu
 }
 
 #########################################
@@ -17,7 +21,7 @@ module "task" {
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
 
-  cpu    = var.cpu
+  cpu    = local.application_cpu
   memory = var.memory
 
   application_container = {
@@ -79,7 +83,7 @@ module "task" {
     {
       name              = "datadog-agent"
       image             = "datadog/agent:latest"
-      cpu               = 20
+      cpu               = local.datadog_agent_cpu
       memory_soft_limit = 256
       memory_hard_limit = 384
 
@@ -113,7 +117,7 @@ module "task" {
       name              = "log-router"
       image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
       essential         = true
-      cpu               = 0
+      cpu               = local.log_router_cpu
       memory_soft_limit = 100
 
       extra_options = {
