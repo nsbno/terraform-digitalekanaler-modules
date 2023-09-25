@@ -23,6 +23,10 @@ variable "cpu" {
   type        = number
   default     = 2048
   description = "The amount of CPU available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
+  validation {
+    condition     = var.datadog_tags.environment >= 256
+    error_message = "The log-router and datadog-agent use 100 CPU each, so you probably need some extra CPU on top of this."
+  }
 }
 
 variable "memory" {
