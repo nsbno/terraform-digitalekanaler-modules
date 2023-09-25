@@ -21,7 +21,7 @@ module "task" {
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
 
-  cpu    = local.application_cpu
+  cpu    = var.cpu
   memory = var.memory
 
   application_container = {
@@ -29,7 +29,7 @@ module "task" {
     image    = var.docker_image
     port     = var.port
     protocol = "HTTP"
-    cpu      = 0
+    cpu      = local.application_cpu
 
     environment = merge(
       {
