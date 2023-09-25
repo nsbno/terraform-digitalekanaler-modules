@@ -17,8 +17,8 @@ module "task" {
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = local.shared_config.ecs_cluster_id
 
-  cpu    = 2048
-  memory = 4096
+  cpu    = var.cpu
+  memory = var.memory
 
   application_container = {
     name     = "${local.name_prefix}-${var.name}"
