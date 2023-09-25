@@ -25,7 +25,7 @@ variable "cpu" {
   description = "The amount of CPU available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
   validation {
     condition     = var.cpu >= 256
-    error_message = "The log-router and datadog-agent use 100 cpu units each. In addition, you need some cpu units for your application. So the minimum total cpu is 256."
+    error_message = "The log-router and datadog-agent use 64 cpu units each. In addition, you need some cpu units for your application. So the minimum total cpu is 256."
   }
 }
 
