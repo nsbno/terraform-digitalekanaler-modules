@@ -23,7 +23,7 @@ locals {
 }
 
 module "spring_boot_service" {
-  source = "github.com/nsbno/terraform-digitalekanaler-modules//spring-boot-service?ref=spring-boot-service-module"
+  source = "github.com/nsbno/terraform-digitalekanaler-modules//spring-boot-service?ref=x.y.z"
 
   name         = local.application_name
   port         = local.application_port
