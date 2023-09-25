@@ -6,7 +6,7 @@ locals {
 
   datadog_agent_cpu = 100
   log_router_cpu    = 100
-  application_cpu   = var.cpu - datadog_agent_cpu - log_router_cpu
+  application_cpu   = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
 }
 
 #########################################
