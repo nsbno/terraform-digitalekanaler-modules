@@ -4,8 +4,8 @@ locals {
   service_account_id   = "184465511165"
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
-  datadog_agent_cpu = 100
-  log_router_cpu    = 100
+  datadog_agent_cpu = 64
+  log_router_cpu    = 64
   application_cpu   = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
 }
 
