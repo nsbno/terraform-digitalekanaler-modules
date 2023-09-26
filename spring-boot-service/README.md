@@ -52,3 +52,14 @@ module "spring_boot_service" {
 }
 ```
 
+## How we determined the CPU and memory limits for the containers
+
+The reason we want to set CPU and memory limits for the application container, log-router and datadog-agent is that fargate will distribute resources evenly if we do not. The trade off that is hard to determine is which of the containers we prioritze. On the one hand, we do not want the log-router and datadog-agent to use resources that our application needs to run. However, in the situations where we run out of resources, we need logs and metrics to determine the cause and prevent it from happening again.
+
+We have decided the following:
+- We set the soft limit for memory on the log-router and datadog-agent. If we run short on memory in the task, docker attempts to keep the container to the soft limit. It also allows the container to use more than the limit if there is unused memory in the task.
+- We do not set the hard limit for memory. Docker will kill the container if it uses more memory than the hard limit. And we do not want this to happen in the majority of cases.
+- We do not set the memory limits for the application container as it will use the remaining memory that is available.
+- We set CPU limit for all containers because it acts similar to the memory soft limit and Fargate will distribute the units evenly if we do not.
+- To set the actual values, we inspected the `ecs.fargate.cpu.percent` and `ecs.fargate.mem.usage` metrics that are available in Datadog.
+- [The AWS ContainerDefinition documentation](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html)
