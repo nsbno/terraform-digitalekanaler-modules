@@ -4,9 +4,11 @@ locals {
   service_account_id   = "184465511165"
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
-  datadog_agent_cpu = 64
-  log_router_cpu    = 64
-  application_cpu   = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
+  datadog_agent_cpu         = 64
+  log_router_cpu            = 64
+  application_cpu           = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
+  datadog_agent_soft_memory = 256
+  log_router_soft_memory    = 100
 }
 
 #########################################
@@ -67,6 +69,8 @@ module "task" {
           valueFrom = data.aws_ssm_parameter.datadog_apikey.arn
         }]
       }
+      mountPoints = []
+      volumesFrom = []
     }
   }
 
@@ -84,8 +88,7 @@ module "task" {
       name              = "datadog-agent"
       image             = "datadog/agent:latest"
       cpu               = local.datadog_agent_cpu
-      memory_soft_limit = 256
-      memory_hard_limit = 384
+      memory_soft_limit = local.datadog_agent_soft_memory
 
       environment = {
         DD_ENV                         = var.datadog_tags.environment
@@ -118,7 +121,7 @@ module "task" {
       image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
       essential         = true
       cpu               = local.log_router_cpu
-      memory_soft_limit = 100
+      memory_soft_limit = local.log_router_soft_memory
 
       extra_options = {
         user        = "0"
