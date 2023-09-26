@@ -69,6 +69,8 @@ module "task" {
           valueFrom = data.aws_ssm_parameter.datadog_apikey.arn
         }]
       }
+      mountPoints = []
+      volumesFrom = []
     }
   }
 
