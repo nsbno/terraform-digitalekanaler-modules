@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: terraform-digitalekanaler-modules
+  title: terraform-digitalekanaler-modules
+spec:
+  type: library
+  lifecycle: production
+  owner: team-dx
