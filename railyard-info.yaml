@@ -3,6 +3,7 @@ kind: Component
 metadata:
   name: terraform-digitalekanaler-modules
   title: terraform-digitalekanaler-modules
+  description: Common terraform modules for our backend services
 spec:
   type: library
   lifecycle: production
