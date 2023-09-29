@@ -145,12 +145,12 @@ module "task" {
   }
 
   lb_listeners = concat(
-    var.public_load_balancer_domain_name == null ? [] : [
+    var.deprecated_public_domain_name == null ? [] : [
       {
         listener_arn      = local.shared_config.lb_listener_arn
         security_group_id = local.shared_config.lb_security_group_id
         conditions = [
-          { host_header = var.public_load_balancer_domain_name },
+          { host_header = var.deprecated_public_domain_name },
         ]
       },
     ],
