@@ -52,10 +52,10 @@ variable "docker_image" {
   description = "The docker image of your service."
 }
 
-variable "public_load_balancer_domain_name" {
+variable "deprecated_public_domain_name" {
   type        = string
   default     = null
-  description = "Do not use this parameter unless you are absolutly sure about what it does. A hostname pointing to our public load balancer."
+  description = "Do not use this parameter unless you are absolutly sure about what it does. Adds a host-based listening rule in the public load balancer. Does not create a DNS record."
 }
 
 variable "environment_variables" {
