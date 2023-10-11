@@ -182,6 +182,43 @@ resource "aws_kms_alias" "application_key_alias" {
   target_key_id = aws_kms_key.application_key.id
 }
 
+data "aws_kms_alias" "common_config_key" {
+  name = "alias/common_config_key"
+}
+
+#########################################
+#                                       #
+# Policy to read secrets                #
+#                                       #
+#########################################
+
+data "aws_iam_policy_document" "fargate_task_policy_document" {
+  statement {
+    actions = ["ssm:GetParameters"]
+
+    resources = concat(keys(var.environment_secrets), [data.aws_ssm_parameter.datadog_apikey.arn])
+  }
+  statement {
+    actions = ["kms:Decrypt"]
+
+    resources = [
+      aws_kms_key.application_key.arn,
+      data.aws_kms_alias.common_config_key.target_key_arn,
+    ]
+  }
+}
+
+resource "aws_iam_policy" "fargate_task_policy" {
+  name        = "${local.name_prefix}-${var.name}-fargate-task-policy"
+  description = "Policy for ${local.name_prefix}-${var.name} to read secrets"
+  policy      = data.aws_iam_policy_document.fargate_task_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "fargate_task_policy_attachment" {
+  role       = module.task.task_execution_role_name
+  policy_arn = aws_iam_policy.fargate_task_policy.arn
+}
+
 #########################################
 #                                       #
 # Internal load balancer integration    #
