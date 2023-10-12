@@ -196,7 +196,7 @@ data "aws_iam_policy_document" "fargate_task_policy_document" {
   statement {
     actions = ["ssm:GetParameters"]
 
-    resources = concat(keys(var.environment_secrets), [data.aws_ssm_parameter.datadog_apikey.arn])
+    resources = concat(values(var.environment_secrets), [data.aws_ssm_parameter.datadog_apikey.arn])
   }
   statement {
     actions = ["kms:Decrypt"]
