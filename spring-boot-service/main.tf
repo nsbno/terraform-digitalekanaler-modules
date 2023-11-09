@@ -16,15 +16,25 @@ locals {
 # Fargate Task                          #
 #                                       #
 #########################################
+
+resource "terraform_data" "no_spot_in_prod" {
+  lifecycle {
+    precondition {
+      condition     = var.use_spot == false || var.environment != "prod"
+      error_message = "You can not use spot instances in prod."
+    }
+  }
+}
 module "task" {
   source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.12.1"
+  depends_on         = [terraform_data.no_spot_in_prod]
   application_name   = "${local.name_prefix}-${var.name}"
   vpc_id             = local.shared_config.vpc_id
   private_subnet_ids = local.shared_config.private_subnet_ids
-  cluster_id         = local.shared_config.ecs_cluster_id
-
-  cpu    = var.cpu
-  memory = var.memory
+  cluster_id         = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
+  use_spot           = var.use_spot
+  cpu                = var.cpu
+  memory             = var.memory
 
   application_container = {
     name     = "${local.name_prefix}-${var.name}"
