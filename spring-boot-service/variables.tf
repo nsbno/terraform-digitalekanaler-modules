@@ -75,3 +75,19 @@ variable "extra_java_tool_options" {
   default     = ""
   description = "Extra options that you want to set in the JAVA_TOOL_OPTIONS variable in addition to the ones that this module sets."
 }
+
+variable "environment" {
+  type        = string
+  description = "The name of the environment that your service is running in (examples: test, stage, prod)."
+
+  validation {
+    condition     = contains(["test", "stage", "service", "prod"], var.environment)
+    error_message = "The only valid environments are test, stage, service and prod."
+  }
+}
+
+variable "use_spot" {
+  type        = bool
+  default     = false
+  description = "Whether to use spot instances in non-production environments."
+}
