@@ -91,3 +91,9 @@ variable "use_spot" {
   default     = false
   description = "Whether to use spot instances in non-production environments."
 }
+
+variable "wait_for_steady_state" {
+  type        = bool
+  default     = true
+  description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
+}
