@@ -97,3 +97,9 @@ variable "wait_for_steady_state" {
   default     = true
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
 }
+
+variable "datadog_agent_enabled" {
+  type        = bool
+  default     = true
+  description = ""
+}

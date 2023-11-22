@@ -9,6 +9,8 @@ locals {
   application_cpu           = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
   datadog_agent_soft_memory = 256
   log_router_soft_memory    = 100
+
+  java_tool_options = var.datadog_agent_enabled ? "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}" : var.extra_java_tool_options
 }
 
 #########################################
@@ -25,6 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
     }
   }
 }
+
 module "task" {
   source                = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
   depends_on            = [terraform_data.no_spot_in_prod]
@@ -51,7 +54,7 @@ module "task" {
         DD_VERSION           = var.datadog_tags.version
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
-        JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
+        JAVA_TOOL_OPTIONS    = local.java_tool_options
       },
       var.environment_variables
     )
@@ -94,40 +97,41 @@ module "task" {
     target_value = tostring(var.autoscaling.target)
   }
 
-  sidecar_containers = [
-    {
-      name              = "datadog-agent"
-      image             = "datadog/agent:latest"
-      cpu               = local.datadog_agent_cpu
-      memory_soft_limit = local.datadog_agent_soft_memory
+  sidecar_containers = concat(
+    var.datadog_agent_enabled ? [
+      {
+        name              = "datadog-agent"
+        image             = "datadog/agent:latest"
+        cpu               = local.datadog_agent_cpu
+        memory_soft_limit = local.datadog_agent_soft_memory
 
-      environment = {
-        DD_ENV                         = var.datadog_tags.environment
-        DD_SERVICE                     = var.name
-        ECS_FARGATE                    = "true"
-        DD_SITE                        = "datadoghq.eu"
-        DD_APM_ENABLED                 = "true"
-        DD_APM_IGNORE_RESOURCES        = "/health"
-        DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
-        DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
-        DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
-      }
+        environment = {
+          DD_ENV                         = var.datadog_tags.environment
+          DD_SERVICE                     = var.name
+          ECS_FARGATE                    = "true"
+          DD_SITE                        = "datadoghq.eu"
+          DD_APM_ENABLED                 = "true"
+          DD_APM_IGNORE_RESOURCES        = "/health"
+          DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
+          DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
+          DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+        }
 
-      secrets = {
-        DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
-      }
+        secrets = {
+          DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
+        }
 
-      extra_options = {
-        mountPoints = []
-        volumesFrom = []
-        portMappings = [{
-          containerPort = 8125
-          hostPort      = 8125
-          protocol      = "udp"
-        }]
-      }
-    },
-    {
+        extra_options = {
+          mountPoints = []
+          volumesFrom = []
+          portMappings = [{
+            containerPort = 8125
+            hostPort      = 8125
+            protocol      = "udp"
+          }]
+        }
+    }] : [],
+    [{
       name              = "log-router"
       image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
       essential         = true
@@ -147,8 +151,8 @@ module "task" {
           }
         }
       }
-    }
-  ]
+    }]
+  )
 
   lb_health_check = {
     port = var.port
