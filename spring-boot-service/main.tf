@@ -19,9 +19,9 @@ locals {
     environment = {
       DD_ENV                         = var.datadog_tags.environment
       DD_SERVICE                     = var.name
-      ECS_FARGATE                    = var.datadog_disable_fargate ? "false" : "true"
+      ECS_FARGATE                    = "true"
       DD_SITE                        = "datadoghq.eu"
-      DD_APM_ENABLED                 = var.datadog_disable_apm ? "false" : "true"
+      DD_APM_ENABLED                 = "true"
       DD_APM_IGNORE_RESOURCES        = "/health"
       DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
       DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
