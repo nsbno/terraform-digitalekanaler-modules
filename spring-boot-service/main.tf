@@ -44,7 +44,7 @@ locals {
         {
           containerPort = 8126
           hostPort      = 8126
-          protocol      = "udp"
+          protocol      = "tcp"
         }
       ]
     }
