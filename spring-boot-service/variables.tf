@@ -101,5 +101,5 @@ variable "datadog_tags" {
 variable "disable_datadog_agent" {
   type        = bool
   default     = false
-  description = "No metrics will appear in Disable the DataDog agent. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
+  description = "Disable the DataDog agent. Disables metrics and APM in DataDog. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
 }
