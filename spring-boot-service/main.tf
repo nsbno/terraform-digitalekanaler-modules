@@ -9,6 +9,68 @@ locals {
   application_cpu           = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
   datadog_agent_soft_memory = 256
   log_router_soft_memory    = 100
+
+  datadog_agent_sidecar_container = {
+    name              = "datadog-agent"
+    image             = "datadog/agent:latest"
+    cpu               = local.datadog_agent_cpu
+    memory_soft_limit = local.datadog_agent_soft_memory
+
+    environment = {
+      DD_ENV                         = var.datadog_tags.environment
+      DD_SERVICE                     = var.name
+      ECS_FARGATE                    = var.datadog_disable_fargate ? "false" : "true"
+      DD_SITE                        = "datadoghq.eu"
+      DD_APM_ENABLED                 = var.datadog_disable_apm ? "false" : "true"
+      DD_APM_IGNORE_RESOURCES        = "/health"
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
+      DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
+      DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+    }
+
+    secrets = {
+      DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
+    }
+
+    extra_options = {
+      mountPoints = []
+      volumesFrom = []
+      portMappings = [
+        {
+          containerPort = 8125
+          hostPort      = 8125
+          protocol      = "udp"
+        },
+        {
+          containerPort = 8126
+          hostPort      = 8126
+          protocol      = "udp"
+        }
+      ]
+    }
+  }
+
+  log_router_sidecar_container = {
+    name              = "log-router"
+    image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
+    essential         = true
+    cpu               = local.log_router_cpu
+    memory_soft_limit = local.log_router_soft_memory
+
+    extra_options = {
+      user        = "0"
+      mountPoints = []
+      volumesFrom = []
+      firelensConfiguration = {
+        type = "fluentbit"
+        options = {
+          "enable-ecs-log-metadata" = "true"
+          "config-file-type"        = "file"
+          "config-file-value"       = "/fluent-bit/configs/parse-json.conf"
+        }
+      }
+    }
+  }
 }
 
 #########################################
@@ -52,7 +114,7 @@ module "task" {
         DD_VERSION           = var.datadog_tags.version
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
-        JAVA_TOOL_OPTIONS    = "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
+        JAVA_TOOL_OPTIONS    = var.disable_datadog_agent ? var.extra_java_tool_options : "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
       },
       var.environment_variables
     )
@@ -95,68 +157,10 @@ module "task" {
     target_value = tostring(var.autoscaling.target)
   }
 
-  sidecar_containers = [
-    {
-      name              = "datadog-agent"
-      image             = "datadog/agent:latest"
-      cpu               = local.datadog_agent_cpu
-      memory_soft_limit = local.datadog_agent_soft_memory
-
-      environment = {
-        DD_ENV                         = var.datadog_tags.environment
-        DD_SERVICE                     = var.name
-        ECS_FARGATE                    = var.datadog_disable_fargate ? "false" : "true"
-        DD_SITE                        = "datadoghq.eu"
-        DD_APM_ENABLED                 = var.datadog_disable_apm ? "false" : "true"
-        DD_APM_IGNORE_RESOURCES        = "/health"
-        DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
-        DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
-        DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
-      }
-
-      secrets = {
-        DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
-      }
-
-      extra_options = {
-        mountPoints = []
-        volumesFrom = []
-        portMappings = [
-          {
-            containerPort = 8125
-            hostPort      = 8125
-            protocol      = "udp"
-          },
-          {
-            containerPort = 8126
-            hostPort      = 8126
-            protocol      = "udp"
-          }
-        ]
-      }
-    },
-    {
-      name              = "log-router"
-      image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
-      essential         = true
-      cpu               = local.log_router_cpu
-      memory_soft_limit = local.log_router_soft_memory
-
-      extra_options = {
-        user        = "0"
-        mountPoints = []
-        volumesFrom = []
-        firelensConfiguration = {
-          type = "fluentbit"
-          options = {
-            "enable-ecs-log-metadata" = "true"
-            "config-file-type"        = "file"
-            "config-file-value"       = "/fluent-bit/configs/parse-json.conf"
-          }
-        }
-      }
-    }
-  ]
+  sidecar_containers = concat(
+    [local.log_router_sidecar_container],
+    var.disable_datadog_agent ? [] : [local.datadog_agent_sidecar_container]
+  )
 
   lb_health_check = {
     port = var.port

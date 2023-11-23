@@ -98,14 +98,8 @@ variable "datadog_tags" {
   }
 }
 
-variable "datadog_disable_fargate" {
+variable "disable_datadog_agent" {
   type        = bool
   default     = false
-  description = "Disable fargate metrics in DataDog"
-}
-
-variable "datadog_disable_apm" {
-  type        = bool
-  default     = false
-  description = "Disable APM in DataDog"
+  description = "No metrics will appear in Disable the DataDog agent. Used for saving money in DataDog."
 }
