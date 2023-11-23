@@ -114,7 +114,10 @@ module "task" {
         DD_VERSION           = var.datadog_tags.version
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
-        JAVA_TOOL_OPTIONS    = var.disable_datadog_agent ? var.extra_java_tool_options : "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
+
+        JAVA_TOOL_OPTIONS = var.disable_datadog_agent ? var.extra_java_tool_options : "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
+
+        VY_DATADOG_AGENT_ENABLED = var.disable_datadog_agent ? "false" : "true"
       },
       var.environment_variables
     )
