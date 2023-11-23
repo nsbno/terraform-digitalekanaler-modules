@@ -35,18 +35,6 @@ variable "memory" {
   description = "The amount of memory available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
 }
 
-variable "datadog_tags" {
-  type = object({
-    version     = string
-    environment = string
-  })
-  description = "All logs and traces in datadog should be tagged with version=<the short commit-sha> and environment=<name of environment>"
-  validation {
-    condition     = contains(["test", "stage", "prod"], var.datadog_tags.environment)
-    error_message = "datadog_tags.environment must be one of 'test', 'stage' and 'prod'."
-  }
-}
-
 variable "docker_image" {
   type        = string
   description = "The docker image of your service."
@@ -98,8 +86,26 @@ variable "wait_for_steady_state" {
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
 }
 
-variable "datadog_agent_enabled" {
+variable "datadog_tags" {
+  type = object({
+    version     = string
+    environment = string
+  })
+  description = "All logs and traces in datadog should be tagged with version=<the short commit-sha> and environment=<name of environment>"
+  validation {
+    condition     = contains(["test", "stage", "prod"], var.datadog_tags.environment)
+    error_message = "datadog_tags.environment must be one of 'test', 'stage' and 'prod'."
+  }
+}
+
+variable "datadog_disable_fargate" {
   type        = bool
-  default     = true
-  description = ""
+  default     = false
+  description = "Disable fargate metrics in DataDog"
+}
+
+variable "datadog_disable_apm" {
+  type        = bool
+  default     = false
+  description = "Disable APM in DataDog"
 }
