@@ -28,6 +28,9 @@ module "spring_boot_service" {
   name         = local.application_name
   port         = local.application_port
   docker_image = local.docker_image
+  environment  = local.environment
+
+  use_spot = var.environment != "prod"
 
   # These settings should not be the same in test, stage and prod. Set lower
   # values for test and stage to save money.
@@ -41,12 +44,12 @@ module "spring_boot_service" {
     version     = local.commit_sha
   }
 
-  environment = {
+  environment_variables = {
     APP_PORT       = tostring(local.application_port)
     DATASOURCE_URL = local.database_url
   }
 
-  secrets = {
+  environment_secrets = {
     OAUTH2_CLIENT_SECRET = aws_ssm_parameter.oauth2_client_secret.arn
   }
 }
