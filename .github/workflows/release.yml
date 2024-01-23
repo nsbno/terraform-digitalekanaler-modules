@@ -1,24 +1,46 @@
-name: Release
+name: Tag new version
+
 on:
   push:
     branches:
-      - "*"
+      - master
+      - semver
+
 jobs:
-  release:
-    name: Release
+  pr-title-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 20
-      - name: Install semantic-release
-        run: npm install semantic-release@23.0.0
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+      - name: Reads the previous tag (version) and bumps it based on the commit message
+        run: |
+          CURRENT_VERSION=$(git describe --abbrev=0 --tags)
+          CURRENT_VERSION_SPLIT=(${CURRENT_VERSION//./ })
+
+          MAJOR=${CURRENT_VERSION_SPLIT[0]}
+          MINOR=${CURRENT_VERSION_SPLIT[1]}
+          PATCH=${CURRENT_VERSION_SPLIT[2]}
+
+          COMMIT_MESSAGE=${{ github.event.head_commit.message }}
+
+          if ! [[ $COMMIT_MESSAGE =~ \[(major|minor|patch|skip ci)\] ]]; then
+            echo "Commit message must contain [patch]/[minor]/[major]/[skip ci]; see README"
+            exit 1
+          fi
+
+          if [[ $COMMIT_MESSAGE =~ \[patch\] ]]; then
+          	PATCH=$((PATCH + 1))
+          fi
+
+          if [[ $COMMIT_MESSAGE =~ \[minor\] ]]; then
+          	MINOR=$((MINOR + 1))
+          	PATCH="0"
+          fi
+
+          if [[ $COMMIT_MESSAGE =~ \[major\] ]]; then
+          	MAJOR=$((MAJOR + 1))
+          	MINOR="0"
+          	PATCH="0"
+          fi
+
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo $NEXT_VERSION
