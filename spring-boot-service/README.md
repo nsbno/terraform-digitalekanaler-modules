@@ -25,10 +25,10 @@ locals {
 module "spring_boot_service" {
   source = "github.com/nsbno/terraform-digitalekanaler-modules//spring-boot-service?ref=x.y.z"
 
-  name         = local.application_name
-  port         = local.application_port
-  docker_image = local.docker_image
-  environment  = local.environment
+  application_name = local.application_name
+  port             = local.application_port
+  docker_image     = local.docker_image
+  environment      = local.environment
 
   use_spot = var.environment != "prod"
 
