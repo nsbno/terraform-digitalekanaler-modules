@@ -161,8 +161,8 @@ module "task" {
   }
 
   sidecar_containers = concat(
+    var.disable_datadog_agent ? [] : [local.datadog_agent_sidecar_container],
     [local.log_router_sidecar_container],
-    var.disable_datadog_agent ? [] : [local.datadog_agent_sidecar_container]
   )
 
   lb_health_check = {
