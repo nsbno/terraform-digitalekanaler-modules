@@ -12,9 +12,9 @@ A collection of terraform modules used to set up some our internal infrastructur
 
 ## Release
 
-This library is configured to release automatically by with GitHub Actions. PR title, and the final commit message after squash and merge, _must_ include one of the following tags:
+This library is configured to release automatically with GitHub Actions. PR title, and the final commit message after squash and merge, _must_ include one of the following tags:
 
-- [skip ci] -> the commit will not be picked up by CircleCi and no release will be made
+- [skip ci] -> the commit will not be picked up by GitHub Actions and no release will be made
 - [patch] -> the commit does not add functionality, and does not break existing functionality
 - [minor] -> the commit adds new functionality without breaking existing functionality
 - [major] -> the commit breaks existing functionality

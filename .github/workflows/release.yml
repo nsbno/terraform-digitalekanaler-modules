@@ -1,3 +1,10 @@
+# Automatically tags new commits based on the commit message.
+#
+# - Expects commit messages to start with [patch], [minor] or [major].
+# - Not designed to run in parallell or multiple times on the same commit.
+# - Should be combined with the verify-pr-title action and proper branch
+#   protection rules to enforce the correct commit message format.
+#
 name: Release
 
 on:
