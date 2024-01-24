@@ -1,0 +1,70 @@
+# Automatically tags new commits based on the commit message.
+#
+# - Expects commit messages to start with [patch], [minor] or [major].
+# - Not designed to run in parallell or multiple times on the same commit.
+# - Should be combined with the verify-pr-title action and proper branch
+#   protection rules to enforce the correct commit message format.
+#
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Reads the previous tag and bumps it based on the commit message
+        run: |
+          # Check that the commit message is on the correct format
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          if ! [[ $COMMIT_MESSAGE =~ \[(major|minor|patch)\] ]]; then
+            echo "Commit message must contain [patch]/[minor]/[major]/[skip ci]; see README"
+            exit 1
+          fi
+
+          # Check that the previous tag is on the correct format
+          CURRENT_VERSION=$(git describe --abbrev=0 --tags)
+          if ! [[ $CURRENT_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "The format of the previous tag is invalid, must be on the format major.minor.patch, for example 2.3.4. This has to be fixed manually."
+            exit 1
+          fi
+
+          CURRENT_VERSION_SPLIT=(${CURRENT_VERSION//./ })
+          MAJOR=${CURRENT_VERSION_SPLIT[0]}
+          MINOR=${CURRENT_VERSION_SPLIT[1]}
+          PATCH=${CURRENT_VERSION_SPLIT[2]}
+
+          if [[ $COMMIT_MESSAGE =~ \[patch\] ]]; then
+          	PATCH=$((PATCH + 1))
+          fi
+
+          if [[ $COMMIT_MESSAGE =~ \[minor\] ]]; then
+          	MINOR=$((MINOR + 1))
+          	PATCH="0"
+          fi
+
+          if [[ $COMMIT_MESSAGE =~ \[major\] ]]; then
+          	MAJOR=$((MAJOR + 1))
+          	MINOR="0"
+          	PATCH="0"
+          fi
+
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a $NEXT_VERSION -m "$COMMIT_MESSAGE"
+          git push --tags

@@ -1,0 +1,24 @@
+name: Verify PR title
+
+on:
+  pull_request:
+    types: [ opened, edited, synchronize, reopened ]
+
+jobs:
+  pr-title-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checks if the PR-title starts with a correct version tag
+        run: |
+          check_pr_title() {
+            input="$1"
+
+            if [[ $input =~ \[(major|minor|patch|skip ci)\] ]]; then
+              exit 0
+            else
+              echo "PR title must contain [patch]/[minor]/[major]/[skip ci]; see README"
+              exit 1
+            fi
+          }
+
+          check_pr_title "${{ github.event.pull_request.title }}"
