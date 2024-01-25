@@ -15,6 +15,7 @@ variable "autoscaling" {
     max_number_of_instances = optional(number, 3)
     metric_type             = optional(string, "ECSServiceAverageCPUUtilization")
     target                  = optional(number, 50)
+    minimum_healthy_percent = optional(number, 100)
   })
   description = "Settings that control how many instances your service is running on."
 }

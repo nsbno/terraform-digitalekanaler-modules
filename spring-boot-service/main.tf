@@ -151,7 +151,7 @@ module "task" {
     }
   }
 
-  deployment_minimum_healthy_percent = 100
+  deployment_minimum_healthy_percent = var.autoscaling.minimum_healthy_percent
 
   autoscaling = {
     min_capacity = var.autoscaling.min_number_of_instances
