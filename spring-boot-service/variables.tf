@@ -109,7 +109,7 @@ variable "health_check" {
   type = object({
     healthy_treshold   = optional(number, 3)
     unhealthy_treshold = optional(number, 3)
-    timout             = optional(number, 5)
+    timeout            = optional(number, 5)
     interval           = optional(number, 30)
   })
 
