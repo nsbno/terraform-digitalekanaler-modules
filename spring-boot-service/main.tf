@@ -88,16 +88,17 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
-  depends_on            = [terraform_data.no_spot_in_prod]
-  application_name      = var.name
-  vpc_id                = local.shared_config.vpc_id
-  private_subnet_ids    = local.shared_config.private_subnet_ids
-  cluster_id            = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
-  use_spot              = var.use_spot
-  cpu                   = var.cpu
-  memory                = var.memory
-  wait_for_steady_state = var.wait_for_steady_state
+  source                            = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
+  depends_on                        = [terraform_data.no_spot_in_prod]
+  application_name                  = var.name
+  vpc_id                            = local.shared_config.vpc_id
+  private_subnet_ids                = local.shared_config.private_subnet_ids
+  cluster_id                        = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
+  use_spot                          = var.use_spot
+  cpu                               = var.cpu
+  memory                            = var.memory
+  wait_for_steady_state             = var.wait_for_steady_state
+  health_check_grace_period_seconds = var.health_check.grace_period
 
   application_container = {
     name     = var.name

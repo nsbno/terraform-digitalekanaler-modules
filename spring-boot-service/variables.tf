@@ -111,6 +111,7 @@ variable "health_check" {
     unhealthy_treshold = optional(number, 3)
     timeout            = optional(number, 5)
     interval           = optional(number, 30)
+    grace_preriod      = optional(number, 300)
   })
 
   default = {
@@ -118,5 +119,6 @@ variable "health_check" {
     unhealthy_treshold = 3
     timeout            = 5
     interval           = 30
+    grace_preriod      = 300
   }
 }
