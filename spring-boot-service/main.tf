@@ -169,7 +169,7 @@ module "task" {
     path               = "/health"
     healthy_treshold   = var.health_check.healthy_treshold
     unhealthy_treshold = var.health_check.unhealthy_treshold
-    timout             = var.health_check.timeout
+    timeout            = var.health_check.timeout
     interval           = var.health_check.interval
   }
 
