@@ -104,3 +104,19 @@ variable "disable_datadog_agent" {
   default     = false
   description = "Disable the DataDog agent. Disables metrics and APM in DataDog. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
 }
+
+variable "health_check" {
+  type = object({
+    healthy_treshold   = optional(number, 3)
+    unhealthy_treshold = optional(number, 3)
+    timout             = optional(number, 5)
+    interval           = optional(number, 30)
+  })
+
+  default = {
+    healthy_treshold   = 3
+    unhealthy_treshold = 3
+    timeout            = 5
+    interval           = 30
+  }
+}

@@ -165,8 +165,12 @@ module "task" {
   )
 
   lb_health_check = {
-    port = var.port
-    path = "/health"
+    port               = var.port
+    path               = "/health"
+    healthy_treshold   = var.health_check.healthy_treshold
+    unhealthy_treshold = var.health_check.unhealthy_treshold
+    timout             = var.health_check.timeout
+    interval           = var.health_check.interval
   }
 
   lb_listeners = concat(
