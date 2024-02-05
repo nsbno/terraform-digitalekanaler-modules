@@ -9,6 +9,8 @@ locals {
   datadog_agent_soft_memory = 256
   log_router_soft_memory    = 100
 
+  name_with_prefix = var.name_prefix == "" ? var.name : "${var.name_prefix}-${var.name}"
+
   datadog_agent_sidecar_container = {
     name              = "datadog-agent"
     image             = "datadog/agent:latest"
@@ -90,7 +92,7 @@ resource "terraform_data" "no_spot_in_prod" {
 module "task" {
   source                = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
   depends_on            = [terraform_data.no_spot_in_prod]
-  application_name      = var.name
+  application_name      = local.name_with_prefix
   vpc_id                = local.shared_config.vpc_id
   private_subnet_ids    = local.shared_config.private_subnet_ids
   cluster_id            = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
@@ -100,7 +102,7 @@ module "task" {
   wait_for_steady_state = var.wait_for_steady_state
 
   application_container = {
-    name     = var.name
+    name     = "${local.name_with_prefix}"
     image    = var.docker_image
     port     = var.port
     protocol = "HTTP"
@@ -199,11 +201,11 @@ module "task" {
 #                                       #
 #########################################
 resource "aws_kms_key" "application_key" {
-  description = "Key for ${var.name}"
+  description = "Key for ${local.name_with_prefix}"
 }
 
 resource "aws_kms_alias" "application_key_alias" {
-  name          = "alias/${var.name}"
+  name          = "alias/${local.name_with_prefix}"
   target_key_id = aws_kms_key.application_key.id
 }
 
@@ -234,8 +236,8 @@ data "aws_iam_policy_document" "fargate_task_policy_document" {
 }
 
 resource "aws_iam_policy" "fargate_task_policy" {
-  name        = "${var.name}-fargate-task-policy"
-  description = "Policy for ${var.name} to read secrets"
+  name        = "${local.name_with_prefix}-fargate-task-policy"
+  description = "Policy for ${local.name_with_prefix} to read secrets"
   policy      = data.aws_iam_policy_document.fargate_task_policy_document.json
 }
 
