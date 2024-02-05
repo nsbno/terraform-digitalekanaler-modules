@@ -3,6 +3,11 @@ variable "name" {
   description = "A short and lowercase name for the service (examples: ticket, booking, smartpris). Must be unique to the service."
 }
 
+variable "name_prefix" {
+  type    = string
+  default = "digitalekanaler"
+}
+
 variable "port" {
   type        = number
   default     = 8080
