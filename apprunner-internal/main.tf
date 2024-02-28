@@ -1,5 +1,6 @@
 locals {
   shared_config = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
+  vpc_id          = nonsensitive(local.shared_config.vpc_id)
   subnet_ids      = nonsensitive(local.shared_config.private_subnet_ids)
 }
 
@@ -15,29 +16,32 @@ module "apprunner" {
     security_groups = [aws_security_group.apprunner_security_group.id]
   }
 
-  environment_variables = {
-    POSTGRES_HOST                = module.database.endpoint
-    POSTGRES_PORT                = module.database.port
-    RAILYARD_ARTIFACTS_S3_BUCKET = aws_s3_bucket.railyard-artifacts.bucket
-    LOG_LEVEL                    = "debug"
-  }
+  environment_variables = var.environment_variables
 
-  environment_secrets = {
-    POSTGRES_USER              = aws_ssm_parameter.rds_username.arn
-    GITHUB_APP_ID              = aws_ssm_parameter.github_app_id.arn
-    GITHUB_CLIENT_ID           = aws_ssm_parameter.github_client_id.arn
-    POSTGRES_PASSWORD          = aws_ssm_parameter.rds_password.arn
-    GITHUB_CLIENT_SECRET       = aws_ssm_parameter.github_client_secret.arn
-    GITHUB_PRIVATE_KEY_CONTENT = aws_ssm_parameter.github_private_key_content.arn
-    CIRCLECI_AUTH_TOKEN        = aws_ssm_parameter.circleci_auth_token.arn
-    BACKEND_SECRET             = aws_ssm_parameter.backend_secret.arn
-  }
+  environment_secrets = var.environment_secrets
 
   ecr_arn = data.aws_ecr_repository.ecr.arn
   ecr_url = data.aws_ecr_repository.ecr.repository_url
 
   domain_name = {
-    name = "railyard.vylabs.io"
+    name = "${var.application_name}.vylabs.io"
     zone = "vylabs.io"
   }
+}
+
+data "aws_ecr_repository" "ecr" {
+  name = "${var.name_prefix}-${var.application_name}"
+}
+
+resource "aws_security_group" "apprunner_security_group" {
+  vpc_id = local.vpc_id
+}
+
+resource "aws_security_group_rule" "allow_all_outgoing_traffic_from_apprunner" {
+  security_group_id = aws_security_group.apprunner_security_group.id
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
 }
