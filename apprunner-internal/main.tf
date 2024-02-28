@@ -1,9 +1,3 @@
-locals {
-  shared_config = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  vpc_id          = nonsensitive(local.shared_config.vpc_id)
-  subnet_ids      = nonsensitive(local.shared_config.private_subnet_ids)
-}
-
 module "apprunner" {
   source      = "github.com/nsbno/terraform-aws-apprunner-service?ref=1.0.0"
   name_prefix = "${var.name_prefix}-${var.application_name}"
@@ -12,7 +6,7 @@ module "apprunner" {
   application_port = "${var.app_port}"
 
   vpc_config = {
-    subnet_ids      = local.subnet_ids
+    subnet_ids      = var.subnet_ids
     security_groups = [aws_security_group.apprunner_security_group.id]
   }
 
@@ -34,7 +28,7 @@ data "aws_ecr_repository" "ecr" {
 }
 
 resource "aws_security_group" "apprunner_security_group" {
-  vpc_id = local.vpc_id
+  vpc_id = var.vpc_id
 }
 
 resource "aws_security_group_rule" "allow_all_outgoing_traffic_from_apprunner" {
