@@ -6,7 +6,7 @@ module "apprunner" {
   application_port = "${var.app_port}"
 
   vpc_config = {
-    subnet_ids      = toset(data.aws_subnets.private.id)
+    subnet_ids      = toset(data.aws_subnets.private.ids)
     security_groups = [aws_security_group.apprunner_security_group.id]
   }
 
@@ -34,7 +34,7 @@ data "aws_subnets" "private" {
   }
 
   tags = {
-    Tier = "Private" # TODO dette må endres til å matche indetifiserende tag i det nye kontosettet
+    Tier = "Private"
   }
 }
 
