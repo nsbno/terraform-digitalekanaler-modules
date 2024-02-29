@@ -6,7 +6,7 @@ module "apprunner" {
   application_port = "${var.app_port}"
 
   vpc_config = {
-    subnet_ids      = var.subnet_ids
+    subnet_ids      = toset(data.aws_subnets.private.id)
     security_groups = [aws_security_group.apprunner_security_group.id]
   }
 
@@ -20,6 +20,21 @@ module "apprunner" {
   domain_name = {
     name = "${var.application_name}.vylabs.io"
     zone = "vylabs.io"
+  }
+}
+
+data "aws_vpc" "selected" {
+  id = var.vpc_id
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+
+  tags = {
+    Tier = "Private" # TODO dette må endres til å matche indetifiserende tag i det nye kontosettet
   }
 }
 
