@@ -48,6 +48,7 @@ locals {
           protocol      = "tcp"
         }
       ]
+      systemControls = []
     }
   }
 
@@ -70,6 +71,7 @@ locals {
           "config-file-value"       = "/fluent-bit/configs/parse-json.conf"
         }
       }
+      systemControls = []
     }
   }
 }
@@ -149,6 +151,7 @@ module "task" {
       }
       mountPoints = []
       volumesFrom = []
+      systemControls = []
     }
   }
 
