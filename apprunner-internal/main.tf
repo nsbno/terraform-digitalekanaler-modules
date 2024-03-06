@@ -36,6 +36,7 @@ resource "aws_apprunner_service" "service" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
+  # TODO Kan vi gjøre dette annerledes?
   dynamic "network_configuration" {
     for_each = local.use_vpc_connector ? aws_apprunner_vpc_connector.service : []
 
@@ -203,6 +204,7 @@ resource "aws_apprunner_custom_domain_association" "service" {
   enable_www_subdomain = false
 }
 
+# TODO vil dette funke? Er gjort slik i Vy-IT sin modul: https://github.com/nsbno/terraform-aws-apprunner-service/blob/master/main.tf#L188
 resource "aws_route53_record" "validation" {
   name = aws_apprunner_custom_domain_association.service.certificate_validation_records[0].name
   records = [
