@@ -1,15 +1,9 @@
-locals {
-  shared_config = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  vpc_id          = nonsensitive(local.shared_config.vpc_id)
-  subnet_ids      = nonsensitive(local.shared_config.private_subnet_ids)
-}
-
 module "database" {
   depends_on = []
   source               = "github.com/nsbno/terraform-aws-rds-instance?ref=b88aef5"
   name_prefix          = var.application_name
-  vpc_id               = local.vpc_id
-  subnet_ids           = local.subnet_ids
+  vpc_id               = var.vpc_id
+  subnet_ids           = var.subnet_ids
   username             = aws_ssm_parameter.rds_username.value
   password             = aws_ssm_parameter.rds_password.value
   port                 = 5432
