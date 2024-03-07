@@ -111,6 +111,7 @@ variable "disable_datadog_agent" {
 }
 
 variable "datadog_agent_cmd_port" {
-  type    = number
-  default = 5001
+  type        = number
+  default     = 5001
+  description = "Sets the DD_CMD_PORT environment variable in the datadog-agent sidecar"
 }
