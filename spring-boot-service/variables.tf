@@ -109,3 +109,8 @@ variable "disable_datadog_agent" {
   default     = false
   description = "Disable the DataDog agent. Disables metrics and APM in DataDog. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
 }
+
+variable "datadog_agent_cmd_port" {
+  type    = number
+  default = 5001
+}
