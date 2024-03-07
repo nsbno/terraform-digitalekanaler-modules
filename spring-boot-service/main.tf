@@ -27,6 +27,7 @@ locals {
       DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
       DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
       DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+      DD_CMD_PORT                    = tostring(var.datadog_agent_cmd_port)
     }
 
     secrets = {
@@ -34,20 +35,8 @@ locals {
     }
 
     extra_options = {
-      mountPoints = []
-      volumesFrom = []
-      portMappings = [
-        {
-          containerPort = 8125
-          hostPort      = 8125
-          protocol      = "udp"
-        },
-        {
-          containerPort = 8126
-          hostPort      = 8126
-          protocol      = "tcp"
-        }
-      ]
+      mountPoints    = []
+      volumesFrom    = []
       systemControls = []
     }
   }
@@ -149,8 +138,8 @@ module "task" {
           valueFrom = data.aws_ssm_parameter.datadog_apikey.arn
         }]
       }
-      mountPoints = []
-      volumesFrom = []
+      mountPoints    = []
+      volumesFrom    = []
       systemControls = []
     }
   }
