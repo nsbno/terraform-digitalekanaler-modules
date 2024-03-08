@@ -11,6 +11,8 @@ locals {
 
   name_with_prefix = var.name_prefix == "" ? var.name : "${var.name_prefix}-${var.name}"
 
+  api_gateway_path = coalesce(var.custom_api_gateway_path, var.name)
+
   datadog_agent_sidecar_container = {
     name              = "datadog-agent"
     image             = "datadog/agent:latest"
@@ -257,7 +259,7 @@ resource "aws_route53_record" "internal_vydev_io_record" {
 
 module "api_gateway" {
   source       = "github.com/nsbno/terraform-digitalekanaler-modules?ref=0.0.2/microservice-apigw-proxy"
-  service_name = var.name
+  service_name = local.api_gateway_path
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
 }
