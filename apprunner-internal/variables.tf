@@ -1,16 +1,16 @@
-variable "name_prefix" {
-  type    = string
-  default = "digitalekanaler"
-}
-
 variable "application_name" {
   type        = string
   description = "A short and lowercase name for the service (examples: ticket, booking, smartpris). Must be unique to the service."
 }
 
-variable "app_port" {
+variable "application_port" {
   type        = number
   description = "The port the application is running on"
+}
+
+variable "ecr_repository_name" {
+  type    = string
+  default = null
 }
 
 variable "environment_variables" {
@@ -25,4 +25,7 @@ variable "environment_secrets" {
   default     = {}
 }
 
-variable "vpc_id" {}
+
+variable "vpc_id" {
+  type = string
+}

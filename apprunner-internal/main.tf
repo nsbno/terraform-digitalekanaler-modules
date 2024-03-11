@@ -1,9 +1,13 @@
+locals {
+  ecr_repository_name = var.ecr_repository_name == null ? var.application_name : var.ecr_repository_name
+}
+
 module "apprunner" {
   source      = "github.com/nsbno/terraform-aws-apprunner-service?ref=1.0.0"
-  name_prefix = "${var.name_prefix}-${var.application_name}"
+  name_prefix = var.application_name
 
   auto_deployment  = true
-  application_port = "${var.app_port}"
+  application_port = tostring(var.application_port)
 
   vpc_config = {
     subnet_ids      = toset(data.aws_subnets.private.ids)
@@ -23,6 +27,7 @@ module "apprunner" {
   }
 }
 
+# TODO: Fix when new aws account is avalible
 data "aws_vpc" "selected" {
   id = var.vpc_id
 }
@@ -39,7 +44,7 @@ data "aws_subnets" "private" {
 }
 
 data "aws_ecr_repository" "ecr" {
-  name = "${var.name_prefix}-${var.application_name}"
+  name = var.ecr_repository_name
 }
 
 resource "aws_security_group" "apprunner_security_group" {
