@@ -32,14 +32,21 @@ data "aws_vpc" "selected" {
   id = var.vpc_id
 }
 
-data "aws_subnets" "private" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
+data "aws_iam_policy_document" "access_policy" {
+  statement {
+    actions = [
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:DescribeImages",
+    ]
+    resources = [aws_ecr_repository.ecr.arn]
   }
-
-  tags = {
-    Tier = "Private"
+  statement {
+    actions = [
+      "ecr:GetAuthorizationToken"
+    ]
+    resources = ["*"]
   }
 }
 
@@ -47,15 +54,46 @@ data "aws_ecr_repository" "ecr" {
   name = var.ecr_repository_name
 }
 
-resource "aws_security_group" "apprunner_security_group" {
-  vpc_id = var.vpc_id
+resource "aws_iam_role_policy_attachment" "access_role_policy_attachment" {
+  role       = aws_iam_role.ecr_access_role.name
+  policy_arn = aws_iam_policy.access_policy.arn
 }
 
-resource "aws_security_group_rule" "allow_all_outgoing_traffic_from_apprunner" {
-  security_group_id = aws_security_group.apprunner_security_group.id
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
+##################################
+#                                #
+# Custom domain name             #
+#                                #
+##################################
+
+data "aws_route53_zone" "zone" {
+  name = var.domain_name.zone
+}
+
+resource "aws_route53_record" "record" {
+  zone_id = data.aws_route53_zone.zone.zone_id
+  name    = var.domain_name.name
+  type    = "CNAME"
+  ttl     = 3600
+  records = [aws_apprunner_service.service.service_url]
+}
+
+resource "aws_apprunner_custom_domain_association" "service" {
+  domain_name          = aws_route53_record.record.name
+  service_arn          = aws_apprunner_service.service.arn
+  enable_www_subdomain = false
+}
+
+# TODO vil dette funke? Er gjort slik i Vy-IT sin modul: https://github.com/nsbno/terraform-aws-apprunner-service/blob/master/main.tf#L188
+resource "aws_route53_record" "validation" {
+  name = aws_apprunner_custom_domain_association.service.certificate_validation_records[0].name
+  records = [
+    aws_apprunner_custom_domain_association.service.certificate_validation_records[0]
+  ]
+  ttl     = 3600
+  type    = aws_apprunner_custom_domain_association.service.certificate_validation_records[0].type
+  zone_id = data.aws_route53_zone.zone.zone_id
+
+  depends_on = [
+    aws_apprunner_custom_domain_association.service
+  ]
 }
