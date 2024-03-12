@@ -57,7 +57,8 @@ variable "environment_secrets" {
   default     = {}
 }
 
-
-variable "vpc_id" {
+variable "domain_name" {
+  description = "All internal apps vylabs.io. Domain name here is in reference to <domain_name>.vylabs.io"
   type = string
+  default = ""
 }

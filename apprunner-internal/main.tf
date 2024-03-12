@@ -1,5 +1,7 @@
 locals {
   ecr_repository_name = var.ecr_repository_name == null ? var.application_name : var.ecr_repository_name
+  hosted_domain_name = var.domain_name == "" ? var.application_name : var.domain_name
+  hosted_zone_name = "vylabs.io"
 }
 
 module "apprunner" {
@@ -10,7 +12,7 @@ module "apprunner" {
   application_port = tostring(var.application_port)
 
   vpc_config = {
-    subnet_ids      = toset(data.aws_subnets.private.ids)
+    subnet_ids      = toset(data.aws_subnets.private_subnets.ids)
     security_groups = [aws_security_group.apprunner_security_group.id]
   }
 
@@ -22,31 +24,8 @@ module "apprunner" {
   ecr_url = data.aws_ecr_repository.ecr.repository_url
 
   domain_name = {
-    name = "${var.application_name}.vylabs.io"
-    zone = "vylabs.io"
-  }
-}
-
-# TODO: Fix when new aws account is avalible
-data "aws_vpc" "selected" {
-  id = var.vpc_id
-}
-
-data "aws_iam_policy_document" "access_policy" {
-  statement {
-    actions = [
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:DescribeImages",
-    ]
-    resources = [aws_ecr_repository.ecr.arn]
-  }
-  statement {
-    actions = [
-      "ecr:GetAuthorizationToken"
-    ]
-    resources = ["*"]
+    name = "${local.hosted_domain_name}.${local.hosted_zone_name}"
+    zone = local.hosted_zone_name
   }
 }
 
@@ -54,46 +33,31 @@ data "aws_ecr_repository" "ecr" {
   name = var.ecr_repository_name
 }
 
-resource "aws_iam_role_policy_attachment" "access_role_policy_attachment" {
-  role       = aws_iam_role.ecr_access_role.name
-  policy_arn = aws_iam_policy.access_policy.arn
+resource "aws_security_group" "apprunner_security_group" {
+  name = "${var.application_name}-sg"
+  vpc_id = data.aws_vpc.shared.id
 }
 
-##################################
-#                                #
-# Custom domain name             #
-#                                #
-##################################
-
-data "aws_route53_zone" "zone" {
-  name = var.domain_name.zone
+resource "aws_security_group_rule" "allow_all_outgoing_traffic_from_apprunner" {
+  security_group_id = aws_security_group.apprunner_security_group.id
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
-resource "aws_route53_record" "record" {
-  zone_id = data.aws_route53_zone.zone.zone_id
-  name    = var.domain_name.name
-  type    = "CNAME"
-  ttl     = 3600
-  records = [aws_apprunner_service.service.service_url]
+data "aws_vpc" "shared" {
+  tags = {
+    Name: "shared"
+  }
 }
 
-resource "aws_apprunner_custom_domain_association" "service" {
-  domain_name          = aws_route53_record.record.name
-  service_arn          = aws_apprunner_service.service.arn
-  enable_www_subdomain = false
+data "aws_subnets" "private_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.shared.id]
+  }
 }
 
-# TODO vil dette funke? Er gjort slik i Vy-IT sin modul: https://github.com/nsbno/terraform-aws-apprunner-service/blob/master/main.tf#L188
-resource "aws_route53_record" "validation" {
-  name = aws_apprunner_custom_domain_association.service.certificate_validation_records[0].name
-  records = [
-    aws_apprunner_custom_domain_association.service.certificate_validation_records[0]
-  ]
-  ttl     = 3600
-  type    = aws_apprunner_custom_domain_association.service.certificate_validation_records[0].type
-  zone_id = data.aws_route53_zone.zone.zone_id
 
-  depends_on = [
-    aws_apprunner_custom_domain_association.service
-  ]
-}
