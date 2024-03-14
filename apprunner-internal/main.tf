@@ -58,6 +58,10 @@ data "aws_subnets" "private_subnets" {
     name   = "vpc-id"
     values = [data.aws_vpc.shared.id]
   }
+  tags = {
+    Tier = "Private"
+    Name = "shared-private"
+  }
 }
 
 
