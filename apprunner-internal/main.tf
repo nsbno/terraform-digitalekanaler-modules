@@ -49,7 +49,7 @@ resource "aws_security_group_rule" "allow_all_outgoing_traffic_from_apprunner" {
 
 data "aws_vpc" "shared" {
   tags = {
-    Name: "shared"
+    Name = "shared"
   }
 }
 
