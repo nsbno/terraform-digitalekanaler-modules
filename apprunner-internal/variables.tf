@@ -1,6 +1,6 @@
 variable "application_name" {
   description = "The name of the application"
-  type = string
+  type        = string
 }
 
 variable "tags" {
@@ -23,7 +23,7 @@ variable "memory" {
 
 variable "auto_scaling" {
   description = "Autoscaling configuration"
-  type = object({
+  type        = object({
     min_instances   = number
     max_instances   = number
     max_concurrency = number
@@ -57,8 +57,16 @@ variable "environment_secrets" {
   default     = {}
 }
 
-variable "domain_name" {
-  description = "All internal apps vylabs.io. Domain name here is in reference to <domain_name>.vylabs.io"
+variable "image_tag" {
+  type    = string
+  default = "latest"
+}
+
+variable "auto_deployment" {
+  type    = bool
+  default = true
+}
+
+variable "service_account_id" {
   type = string
-  default = ""
 }
