@@ -100,15 +100,15 @@ module "task" {
     port     = var.port
     protocol = "HTTP"
     cpu      = local.application_cpu
-    health_check_override = var.health_check == null ? null : {
+    health_check = var.health_check_override == null ? null : {
               retries: 5,
               command: [
                   "CMD-SHELL",
                   "wget --no-verbose --tries=1 --spider http://localhost:${var.port}/health || exit 1"
               ],
-              timeout: var.health_check.timeout,
-              interval: var.health_check.interval,
-              startPeriod: try(var.health_check.startPeriod, null)
+              timeout: var.health_check_override.timeout,
+              interval: var.health_check_override.interval,
+              startPeriod: try(var.health_check_override.startPeriod, null)
           }
 
     environment = merge(
