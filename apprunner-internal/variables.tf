@@ -62,11 +62,6 @@ variable "image_tag" {
   default = "latest"
 }
 
-variable "auto_deployment" {
-  type    = bool
-  default = true
-}
-
 variable "service_account_id" {
   type = string
 }

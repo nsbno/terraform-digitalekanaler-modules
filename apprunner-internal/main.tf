@@ -12,10 +12,7 @@ terraform {
 locals {
   zone              = "digital-common-services.vydev.io"
   domain_name       = "${var.application_name}.${local.zone}"
-  validation_record = one(aws_apprunner_custom_domain_association.service.certificate_validation_records)
-  name              = try(local.validation_record.name)
-  value             = try(local.validation_record.value)
-  type              = try(local.validation_record.type)
+  validation_record = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)
 }
 
 
@@ -41,7 +38,7 @@ resource "aws_apprunner_service" "service" {
         runtime_environment_secrets   = var.environment_secrets
       }
     }
-    auto_deployments_enabled = var.auto_deployment
+    auto_deployments_enabled = false
   }
 
   instance_configuration {
@@ -212,12 +209,14 @@ resource "aws_apprunner_custom_domain_association" "service" {
 }
 
 resource "aws_route53_record" "validation" {
-  name    = local.name
+  count = length(local.validation_record)
+
+  name    = local.validation_record[count.index].name
   records = [
-    local.value
+    local.validation_record[count.index].value
   ]
   ttl     = 3600
-  type    = local.type
+  type    = local.validation_record[count.index].type
   zone_id = data.aws_route53_zone.zone.zone_id
 
   depends_on = [
