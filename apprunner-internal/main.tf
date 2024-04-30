@@ -55,12 +55,6 @@ resource "aws_apprunner_service" "service" {
       vpc_connector_arn = aws_apprunner_vpc_connector.service.arn
     }
   }
-
-  tags = var.tags
-
-  depends_on = [
-    aws_iam_role.ecr_access_role
-  ]
 }
 
 data "aws_ecr_repository" "ecr" {
@@ -94,8 +88,6 @@ resource "aws_apprunner_vpc_connector" "service" {
   vpc_connector_name = var.application_name
   subnets            = data.aws_subnets.private_subnets.ids
   security_groups    = [aws_security_group.apprunner_security_group.id]
-
-  tags = var.tags
 }
 
 resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
@@ -103,8 +95,6 @@ resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
   max_concurrency                 = var.auto_scaling.max_concurrency
   min_size                        = var.auto_scaling.min_instances
   max_size                        = var.auto_scaling.max_instances
-
-  tags = var.tags
 }
 
 
@@ -117,8 +107,6 @@ resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
 resource "aws_iam_role" "task_role" {
   name               = "${var.application_name}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume_policy.json
-
-  tags = var.tags
 }
 
 data "aws_iam_policy_document" "task_assume_policy" {
@@ -141,8 +129,6 @@ data "aws_iam_policy_document" "task_assume_policy" {
 resource "aws_iam_role" "ecr_access_role" {
   name               = "${var.application_name}-access-role"
   assume_role_policy = data.aws_iam_policy_document.access_assume_policy.json
-
-  tags = var.tags
 }
 
 data "aws_iam_policy_document" "access_assume_policy" {
@@ -218,8 +204,4 @@ resource "aws_route53_record" "validation" {
   ttl     = 3600
   type    = local.validation_record[count.index].type
   zone_id = data.aws_route53_zone.zone.zone_id
-
-  depends_on = [
-    aws_apprunner_custom_domain_association.service
-  ]
 }

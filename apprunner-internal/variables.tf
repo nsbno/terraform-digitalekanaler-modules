@@ -42,7 +42,6 @@ variable "application_port" {
 
 variable "ecr_repository_name" {
   type    = string
-  default = null
 }
 
 variable "environment_variables" {
