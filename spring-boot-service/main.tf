@@ -185,20 +185,33 @@ module "task" {
         ]
       },
     ],
+    var.lb_stickiness == null ? [] : [
+      {
+        listener_arn      = local.shared_config.lb_internal_listener_arn
+        security_group_id = local.shared_config.lb_internal_security_group_id
+        conditions = [
+          {
+            host_header = local.internal_domain_name
+          },
+          {
+            path_pattern = var.lb_stickiness.path
+          }
+        ]
+        lb_stickiness = var.lb_stickiness 
+      },
+    ],
     [
       {
         listener_arn      = local.shared_config.lb_internal_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
         conditions = [
           { host_header = local.internal_domain_name },
-        ]
+        ] 
       }
     ]
   )
 
   propagate_tags = "TASK_DEFINITION"
-
-  lb_stickiness = var.lb_stickiness
 }
 
 #########################################
