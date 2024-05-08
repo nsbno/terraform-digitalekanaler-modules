@@ -46,7 +46,7 @@ locals {
   log_router_sidecar_container = {
     name              = "log-router"
     image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
-    essential         = true
+    essential         = false
     cpu               = local.log_router_cpu
     memory_soft_limit = local.log_router_soft_memory
 
@@ -83,16 +83,22 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
-  depends_on            = [terraform_data.no_spot_in_prod]
-  application_name      = local.name_with_prefix
-  vpc_id                = local.shared_config.vpc_id
-  private_subnet_ids    = local.shared_config.private_subnet_ids
-  cluster_id            = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
-  use_spot              = var.use_spot
-  cpu                   = var.cpu
-  memory                = var.memory
-  wait_for_steady_state = var.wait_for_steady_state
+  # source = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
+  source                            = "/Users/halvor/repo/vy/terraform-aws-ecs-service"
+  depends_on                        = [terraform_data.no_spot_in_prod]
+  application_name                  = local.name_with_prefix
+  vpc_id                            = local.shared_config.vpc_id
+  private_subnet_ids                = local.shared_config.private_subnet_ids
+  cluster_id                        = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
+  use_spot                          = var.use_spot
+  cpu                               = var.cpu
+  memory                            = var.memory
+  health_check_grace_period_seconds = 90
+  wait_for_steady_state             = var.wait_for_steady_state
+  ecs_service_timeouts = {
+    create = "5m"
+    update = "5m"
+  }
 
   application_container = {
     name     = "${local.name_with_prefix}"
@@ -100,16 +106,17 @@ module "task" {
     port     = var.port
     protocol = "HTTP"
     cpu      = local.application_cpu
-    health_check = var.health_check_override == null ? null : {
-              retries: 5,
-              command: [
-                  "CMD-SHELL",
-                  "wget --no-verbose --tries=1 --spider http://localhost:${var.port}/health || exit 1"
-              ],
-              timeout: var.health_check_override.timeout,
-              interval: var.health_check_override.interval,
-              startPeriod: try(var.health_check_override.startPeriod, null)
-          }
+
+    health_check = var.health_check_override != null ? {
+      command : [
+        "CMD-SHELL",
+        "wget --no-verbose --tries=1 --spider http://localhost:${var.port}${var.health_check_override.endpoint} || exit 1"
+      ],
+      interval : var.health_check_override.interval,
+      retries : var.health_check_override.retries,
+      startPeriod : try(var.health_check_override.startPeriod, null)
+      timeout : var.health_check_override.timeout,
+    } : null
 
     environment = merge(
       {
