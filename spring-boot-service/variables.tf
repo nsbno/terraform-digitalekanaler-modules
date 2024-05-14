@@ -146,7 +146,6 @@ variable "lb_deregistration_delay" {
   type        = number
   default     = 30
   description = "The time that the load balancer waits before it deregisters a running task."
-
 }
 
 variable "service_timeouts" {
@@ -156,9 +155,9 @@ variable "service_timeouts" {
     delete = optional(string)
   })
   default = {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
+    create = "6m"
+    update = "6m"
+    delete = "6m"
   }
   description = "Timeouts for the service resource."
 }
