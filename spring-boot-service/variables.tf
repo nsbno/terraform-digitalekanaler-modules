@@ -124,10 +124,10 @@ variable "custom_api_gateway_path" {
 
 variable "health_check_override" {
   type = object({
-    interval = number
-    timeout = number
+    interval    = number
+    timeout     = number
     startPeriod = optional(number, null)
   })
-  default = null
+  default     = null
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
 }

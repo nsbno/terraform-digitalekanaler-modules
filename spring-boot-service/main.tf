@@ -6,8 +6,11 @@ locals {
   datadog_agent_cpu         = 64
   log_router_cpu            = 64
   application_cpu           = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
+  application_memory        = var.memory - local.log_router_cpu - local.datadog_agent_soft_memory
   datadog_agent_soft_memory = 256
   log_router_soft_memory    = 100
+
+  combined_java_tool_options = ""
 
   name_with_prefix = var.name_prefix == "" ? var.name : "${var.name_prefix}-${var.name}"
 
@@ -100,6 +103,7 @@ module "task" {
     port     = var.port
     protocol = "HTTP"
     cpu      = local.application_cpu
+    memory = local.application_memory
     health_check = var.health_check_override == null ? null : {
               retries: 5,
               command: [
