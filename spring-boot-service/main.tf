@@ -1,6 +1,5 @@
 locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  service_account_id   = "184465511165"
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
   datadog_agent_cpu         = 64
@@ -113,7 +112,7 @@ module "task" {
   }
 
   application_container = {
-    name     = "${local.name_with_prefix}"
+    name     = local.name_with_prefix
     image    = var.docker_image
     port     = var.port
     protocol = "HTTP"
