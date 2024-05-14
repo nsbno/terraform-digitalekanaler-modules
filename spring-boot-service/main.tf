@@ -1,6 +1,5 @@
 locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  service_account_id   = "184465511165"
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
   datadog_agent_cpu         = 64
@@ -41,12 +40,23 @@ locals {
       volumesFrom    = []
       systemControls = []
     }
+
+    health_check = {
+      retries : 3,
+      timeout : 5,
+      interval : 10,
+      startPeriod : 15
+      command = [
+        "CMD-SHELL",
+        "agent health"
+      ]
+    }
   }
 
   log_router_sidecar_container = {
     name              = "log-router"
     image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
-    essential         = true
+    essential         = false
     cpu               = local.log_router_cpu
     memory_soft_limit = local.log_router_soft_memory
 
@@ -83,33 +93,40 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                = "github.com/nsbno/terraform-aws-ecs-service?ref=0.13.0"
-  depends_on            = [terraform_data.no_spot_in_prod]
-  application_name      = local.name_with_prefix
-  vpc_id                = local.shared_config.vpc_id
-  private_subnet_ids    = local.shared_config.private_subnet_ids
-  cluster_id            = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
-  use_spot              = var.use_spot
-  cpu                   = var.cpu
-  memory                = var.memory
-  wait_for_steady_state = var.wait_for_steady_state
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.3"
+  depends_on         = [terraform_data.no_spot_in_prod]
+  application_name   = local.name_with_prefix
+  vpc_id             = local.shared_config.vpc_id
+  private_subnet_ids = local.shared_config.private_subnet_ids
+  cluster_id         = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
+  use_spot           = var.use_spot
+  cpu                = var.cpu
+  memory             = var.memory
+
+  wait_for_steady_state             = var.wait_for_steady_state
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
+  ecs_service_timeouts = {
+    create = var.service_timeouts.create
+    update = var.service_timeouts.update
+    delete = var.service_timeouts.delete
+  }
 
   application_container = {
-    name     = "${local.name_with_prefix}"
+    name     = local.name_with_prefix
     image    = var.docker_image
     port     = var.port
     protocol = "HTTP"
     cpu      = local.application_cpu
     health_check = var.health_check_override == null ? null : {
-              retries: 5,
-              command: [
-                  "CMD-SHELL",
-                  "wget --no-verbose --tries=1 --spider http://localhost:${var.port}/health || exit 1"
-              ],
-              timeout: var.health_check_override.timeout,
-              interval: var.health_check_override.interval,
-              startPeriod: try(var.health_check_override.startPeriod, null)
-          }
+      retries : 5,
+      command : [
+        "CMD-SHELL",
+        "wget --no-verbose --tries=1 --spider http://localhost:${var.port}/health || exit 1"
+      ],
+      timeout : var.health_check_override.timeout,
+      interval : var.health_check_override.interval,
+      startPeriod : try(var.health_check_override.startPeriod, null)
+    }
 
     environment = merge(
       {
@@ -171,9 +188,12 @@ module "task" {
   )
 
   lb_health_check = {
-    port = var.port
-    path = "/health"
+    port              = var.port
+    path              = "/health"
+    interval          = 10
+    healthy_threshold = 2
   }
+  lb_deregistration_delay = var.lb_deregistration_delay
 
   lb_listeners = concat(
     var.deprecated_public_domain_name == null ? [] : [

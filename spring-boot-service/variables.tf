@@ -124,10 +124,40 @@ variable "custom_api_gateway_path" {
 
 variable "health_check_override" {
   type = object({
-    interval = number
-    timeout = number
-    startPeriod = optional(number, null)
+    interval    = optional(number)
+    timeout     = optional(number)
+    startPeriod = optional(number)
   })
-  default = null
+  default = {
+    interval    = 5
+    timeout     = 2
+    startPeriod = 90
+  }
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
+}
+
+variable "health_check_grace_period_seconds" {
+  type        = number
+  default     = 90
+  description = "The time that ECS waits before it starts checking the health of the new task."
+}
+
+variable "lb_deregistration_delay" {
+  type        = number
+  default     = 30
+  description = "The time that the load balancer waits before it deregisters a running task."
+}
+
+variable "service_timeouts" {
+  type = object({
+    create = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default = {
+    create = "6m"
+    update = "6m"
+    delete = "6m"
+  }
+  description = "Timeouts for the service resource."
 }
