@@ -93,7 +93,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.3"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.4"
   depends_on         = [terraform_data.no_spot_in_prod]
   application_name   = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -217,6 +217,8 @@ module "task" {
   )
 
   propagate_tags = "TASK_DEFINITION"
+
+  lb_stickiness = var.lb_stickiness
 }
 
 #########################################
