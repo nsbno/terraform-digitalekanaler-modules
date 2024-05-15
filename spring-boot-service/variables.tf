@@ -131,3 +131,14 @@ variable "health_check_override" {
   default = null
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
 }
+
+variable "lb_stickiness" {
+  type = object({
+    type            = optional(string, "app_cookie")
+    enabled         = optional(bool,   true)
+    cookie_duration = optional(number, 86400)
+    cookie_name     = string
+  })
+  default = null
+  description = "Bind a user's session to a specific target"
+}
