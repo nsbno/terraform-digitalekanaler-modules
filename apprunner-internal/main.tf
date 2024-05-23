@@ -10,7 +10,7 @@ terraform {
 }
 
 locals {
-  zone              = "digital-common-services.vydev.io"
+  zone              = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
   domain_name       = "${var.application_name}.${local.zone}"
   validation_record = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)
 }
