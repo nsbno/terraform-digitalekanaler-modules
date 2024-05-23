@@ -12,7 +12,7 @@ terraform {
 locals {
   zone              = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
   domain_name       = "${var.application_name}.${local.zone}"
-  validation_record = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)
+  validation_record = aws_apprunner_custom_domain_association.service.certificate_validation_records : []
 }
 
 
@@ -195,13 +195,14 @@ resource "aws_apprunner_custom_domain_association" "service" {
 }
 
 resource "aws_route53_record" "validation" {
-  count = length(local.validation_record)
+  depends_on = [ aws_apprunner_custom_domain_association.service ]
+  for_each = aws_apprunner_custom_domain_association.service.certificate_validation_records[*]
 
-  name    = local.validation_record[count.index].name
+  name    = each.value.name
   records = [
-    local.validation_record[count.index].value
+    each.value.value
   ]
   ttl     = 3600
-  type    = local.validation_record[count.index].type
+  type    = each.value.type
   zone_id = data.aws_route53_zone.zone.zone_id
 }
