@@ -23,6 +23,7 @@ locals {
 ##################################
 
 resource "aws_apprunner_service" "service" {
+  depends_on = [ aws_iam_role.ecr_access_role ]
   service_name = var.application_name
 
   source_configuration {
