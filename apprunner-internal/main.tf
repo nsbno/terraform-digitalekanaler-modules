@@ -211,9 +211,10 @@ resource "aws_apprunner_custom_domain_association" "service" {
 
 # ugly workaround to make terraform evaluate the length at runtime and not at plan time, since the records don't exist before then. ugh.
 resource "aws_route53_record" "validation" {
-  name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].name
-  type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].type
+  count = 2
+  name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].name
+  type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].type
   zone_id = data.aws_route53_zone.zone.zone_id
-  records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].value]
+  records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].value]
   ttl     = 3600
 }
