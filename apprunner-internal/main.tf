@@ -67,7 +67,8 @@ data "vy_artifact_version" "ecr" {
 }
 
 data "aws_ecr_repository" "ecr" {
-  name = var.application_name
+  name = var.ecr_repository_name
+  registry_id = var.service_account_id
 }
 
 data "aws_ecr_image" "ecr" {
