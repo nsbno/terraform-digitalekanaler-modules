@@ -12,7 +12,7 @@ terraform {
 locals {
   zone        = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
   domain_name = "${var.application_name}.${local.zone}"
-
+  docker_image = "${data.vy_artifact_version.ecr.store}/${data.vy_artifact_version.ecr.path}@${data.vy_artifact_version.ecr.version}"
 }
 
 
@@ -31,7 +31,7 @@ resource "aws_apprunner_service" "service" {
       access_role_arn = aws_iam_role.ecr_access_role.arn
     }
     image_repository {
-      image_identifier      = "${data.aws_ecr_repository.ecr.repository_url}:${var.image_tag}"
+      image_identifier      = local.docker_image
       image_repository_type = "ECR"
       image_configuration {
         port                          = var.application_port
@@ -58,9 +58,14 @@ resource "aws_apprunner_service" "service" {
   }
 }
 
-data "aws_ecr_repository" "ecr" {
-  name        = var.ecr_repository_name
-  registry_id = var.service_account_id
+data "vy_artifact_version" "ecr" {
+  application = "${var.name_prefix}-${var.application_name}"
+}
+
+data "aws_ecr_image" "ecr" {
+  repository_name = var.ecr_repository_name
+  registry_id     = var.service_account_id
+  image_digest    = data.vy_artifact_version.ecr.version
 }
 
 data "aws_vpc" "shared" {
