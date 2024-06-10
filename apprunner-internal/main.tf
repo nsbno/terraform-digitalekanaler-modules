@@ -63,7 +63,7 @@ resource "aws_apprunner_service" "service" {
 }
 
 data "vy_artifact_version" "ecr" {
-  application = "${var.name_prefix}-${var.application_name}"
+  application = var.application_name
 }
 
 data "aws_ecr_image" "ecr" {
