@@ -185,7 +185,7 @@ resource "aws_route53_record" "record" {
   zone_id = data.aws_route53_zone.zone.zone_id
   name    = local.domain_name
   type    = "CNAME"
-  ttl     = 7200
+  ttl     = 300
   records = [aws_apprunner_service.service.service_url]
 }
 
