@@ -10,9 +10,9 @@ terraform {
 }
 
 locals {
-  zone              = "digital-common-services.vydev.io"
-  domain_name       = "${var.application_name}.${local.zone}"
-  validation_record = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)
+  zone        = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
+  domain_name = "${var.application_name}.${local.zone}"
+
 }
 
 
@@ -23,6 +23,7 @@ locals {
 ##################################
 
 resource "aws_apprunner_service" "service" {
+  depends_on = [ aws_iam_role.ecr_access_role ]
   service_name = var.application_name
 
   source_configuration {
@@ -58,8 +59,8 @@ resource "aws_apprunner_service" "service" {
 }
 
 data "aws_ecr_repository" "ecr" {
-  name = var.ecr_repository_name
-  registry_id     = var.service_account_id
+  name        = var.ecr_repository_name
+  registry_id = var.service_account_id
 }
 
 data "aws_vpc" "shared" {
@@ -194,14 +195,11 @@ resource "aws_apprunner_custom_domain_association" "service" {
   enable_www_subdomain = false
 }
 
+# ugly workaround to make terraform evaluate the length at runtime and not at plan time, since the records don't exist before then. ugh.
 resource "aws_route53_record" "validation" {
-  count = length(local.validation_record)
-
-  name    = local.validation_record[count.index].name
-  records = [
-    local.validation_record[count.index].value
-  ]
-  ttl     = 3600
-  type    = local.validation_record[count.index].type
+  name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].name
+  type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].type
   zone_id = data.aws_route53_zone.zone.zone_id
+  records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[0].value]
+  ttl     = 3600
 }
