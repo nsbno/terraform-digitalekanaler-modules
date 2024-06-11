@@ -217,4 +217,8 @@ resource "aws_route53_record" "validation" {
   zone_id = data.aws_route53_zone.zone.zone_id
   records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].value]
   ttl     = 3600
+
+  depends_on = [
+    aws_apprunner_custom_domain_association.service
+  ]
 }
