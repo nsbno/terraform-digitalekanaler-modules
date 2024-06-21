@@ -189,6 +189,7 @@ variable "custom_metrics" {
       })
       stat = string
     }))
+    expression  = optional(string, null)
     return_data = bool
   }))
   default = []
