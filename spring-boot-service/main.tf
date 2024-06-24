@@ -93,7 +93,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.4"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.6"
   depends_on         = [terraform_data.no_spot_in_prod]
   application_name   = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -178,9 +178,11 @@ module "task" {
   autoscaling = {
     min_capacity = var.autoscaling.min_number_of_instances
     max_capacity = var.autoscaling.max_number_of_instances
-    metric_type  = var.autoscaling.metric_type
+    metric_type  = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
     target_value = tostring(var.autoscaling.target)
   }
+
+  custom_metrics = var.custom_metrics
 
   sidecar_containers = concat(
     var.disable_datadog_agent ? [] : [local.datadog_agent_sidecar_container],

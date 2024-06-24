@@ -172,3 +172,25 @@ variable "service_timeouts" {
   }
   description = "Timeouts for the service resource."
 }
+
+variable "custom_metrics" {
+  description = "The custom metrics for autoscaling. Check https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#create-target-tracking-scaling-policy-using-metric-math for more information."
+  type = list(object({
+    label = string
+    id    = string
+    expression  = optional(string)
+    metric_stat = optional(object({
+      metric = object({
+        metric_name = string
+        namespace   = string
+        dimensions = list(object({
+          name  = string
+          value = string
+        }))
+      })
+      stat = string
+    }))
+    return_data = bool
+  }))
+  default = []
+}
