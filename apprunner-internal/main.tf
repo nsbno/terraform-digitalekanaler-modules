@@ -106,7 +106,7 @@ resource "aws_apprunner_vpc_connector" "service" {
 }
 
 resource "aws_apprunner_auto_scaling_configuration_version" "autoscaling" {
-  auto_scaling_configuration_name = "limited-scaling"
+  auto_scaling_configuration_name = "${var.application_name}-limited-scaling"
   max_concurrency                 = var.auto_scaling.max_concurrency
   min_size                        = var.auto_scaling.min_instances
   max_size                        = var.auto_scaling.max_instances
