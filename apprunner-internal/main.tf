@@ -54,11 +54,14 @@ resource "aws_apprunner_service" "service" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
-  network_configuration {
+  dynamic network_configuration {
+    for_each = var.use_vpc_connector ? aws_apprunner_vpc_connector.service : []
+    content {
     egress_configuration {
       egress_type       = "VPC"
       vpc_connector_arn = aws_apprunner_vpc_connector.service.arn
     }
+      }
   }
 }
 
@@ -100,6 +103,7 @@ resource "aws_security_group" "apprunner_security_group" {
 }
 
 resource "aws_apprunner_vpc_connector" "service" {
+  count              = var.use_vpc_connector ? 1 : 0
   vpc_connector_name = var.application_name
   subnets            = data.aws_subnets.private_subnets.ids
   security_groups    = [aws_security_group.apprunner_security_group.id]

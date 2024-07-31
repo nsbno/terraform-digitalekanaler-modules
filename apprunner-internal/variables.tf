@@ -74,3 +74,9 @@ variable "environment" {
     error_message = "The only valid environments are test, stage, service and prod."
   }
 }
+
+variable "use_vpc_connector" {
+  type = bool
+  description = "Whether or not to run the service in the private subnets of th shared vpc"
+  default = true
+}
