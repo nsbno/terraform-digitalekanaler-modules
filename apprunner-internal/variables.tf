@@ -74,14 +74,3 @@ variable "environment" {
     error_message = "The only valid environments are test, stage, service and prod."
   }
 }
-
-variable "subnet_placement" {
-  type = string
-  description = "Which subnets to place the app in (public, private)"
-  default = "private"
-
-  validation {
-    condition = contains(["public", "private"], var.subnet_placement)
-    error_message = "The only valid subnets are public, or private"
-  }
-}

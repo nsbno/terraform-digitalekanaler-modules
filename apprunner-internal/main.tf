@@ -94,17 +94,6 @@ data "aws_subnets" "private_subnets" {
   }
 }
 
-data "aws_subnets" "public_subnets" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.shared.id]
-  }
-  tags = {
-    Tier = "Public"
-    Name = "shared-public"
-  }
-}
-
 resource "aws_security_group" "apprunner_security_group" {
   name   = "${var.application_name}-sg"
   vpc_id = data.aws_vpc.shared.id
@@ -112,7 +101,7 @@ resource "aws_security_group" "apprunner_security_group" {
 
 resource "aws_apprunner_vpc_connector" "service" {
   vpc_connector_name = var.application_name
-  subnets            = var.subnet_placement == "public" ? data.aws_subnets.public_subnets.ids : data.aws_subnets.private_subnets.ids
+  subnets            = data.aws_subnets.private_subnets.ids
   security_groups    = [aws_security_group.apprunner_security_group.id]
 }
 
