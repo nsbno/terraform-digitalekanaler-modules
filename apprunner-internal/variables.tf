@@ -75,8 +75,13 @@ variable "environment" {
   }
 }
 
-variable "use_vpc_connector" {
-  type = bool
-  description = "Whether or not to run the service in the private subnets of th shared vpc"
-  default = true
+variable "subnet_placement" {
+  type = string
+  description = "Which subnets to place the app in (public, private)"
+  default = "private"
+
+  validation {
+    condition = contains(["public", "private"], var.subnet_placement)
+    error_message = "The only valid subnets are public, or private"
+  }
 }

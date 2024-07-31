@@ -54,14 +54,11 @@ resource "aws_apprunner_service" "service" {
 
   auto_scaling_configuration_arn = aws_apprunner_auto_scaling_configuration_version.autoscaling.arn
 
-  dynamic network_configuration {
-    for_each = var.use_vpc_connector ? aws_apprunner_vpc_connector.service : []
-    content {
+  network_configuration {
     egress_configuration {
       egress_type       = "VPC"
       vpc_connector_arn = aws_apprunner_vpc_connector.service.arn
     }
-      }
   }
 }
 
@@ -97,15 +94,25 @@ data "aws_subnets" "private_subnets" {
   }
 }
 
+data "aws_subnets" "public_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.shared.id]
+  }
+  tags = {
+    Tier = "Public"
+    Name = "shared-public"
+  }
+}
+
 resource "aws_security_group" "apprunner_security_group" {
   name   = "${var.application_name}-sg"
   vpc_id = data.aws_vpc.shared.id
 }
 
 resource "aws_apprunner_vpc_connector" "service" {
-  count              = var.use_vpc_connector ? 1 : 0
   vpc_connector_name = var.application_name
-  subnets            = data.aws_subnets.private_subnets.ids
+  subnets            = var.subnet_placement == "public" ? data.aws_subnets.public_subnets.ids : data.aws_subnets.private_subnets.ids
   security_groups    = [aws_security_group.apprunner_security_group.id]
 }
 
