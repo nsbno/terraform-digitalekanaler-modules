@@ -14,7 +14,7 @@ terraform {
 }
 
 locals {
-  zone        = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
+  zone        = var.environment == "prod" ? "vylabs.io" : "${var.environment}.vylabs.io"
   domain_name = "${var.application_name}.${local.zone}"
   docker_image = "${data.vy_artifact_version.ecr.store}/${data.vy_artifact_version.ecr.path}@${data.vy_artifact_version.ecr.version}"
 }
