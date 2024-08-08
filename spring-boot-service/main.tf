@@ -17,6 +17,7 @@ locals {
     image             = "datadog/agent:latest"
     cpu               = local.datadog_agent_cpu
     memory_soft_limit = local.datadog_agent_soft_memory
+    port = 8125
 
     environment = {
       DD_ENV                         = var.datadog_tags.environment
