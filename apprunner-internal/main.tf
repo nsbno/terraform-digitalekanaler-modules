@@ -254,6 +254,6 @@ resource "aws_route53_record" "vylabs_validation" {
   ttl     = 3600
 
   depends_on = [
-    aws_apprunner_custom_domain_association.service
+    aws_apprunner_custom_domain_association.vylabs_service
   ]
 }
