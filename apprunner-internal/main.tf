@@ -14,8 +14,10 @@ terraform {
 }
 
 locals {
-  zone        = var.environment == "prod" ? "vylabs.io" : "${var.environment}.vylabs.io"
+  zone        = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
   domain_name = "${var.application_name}.${local.zone}"
+  vylabs_zone = var.environment == "prod" ? "vylabs.io" : "${var.environment}.vylabs.io"
+  vylabs_domain_name = "${var.application_name}.${local.vylabs_zone}"
   docker_image = "${data.vy_artifact_version.ecr.store}/${data.vy_artifact_version.ecr.path}@${data.vy_artifact_version.ecr.version}"
 }
 
@@ -215,6 +217,33 @@ resource "aws_route53_record" "validation" {
   name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].name
   type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].type
   zone_id = data.aws_route53_zone.zone.zone_id
+  records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].value]
+  ttl     = 3600
+
+  depends_on = [
+    aws_apprunner_custom_domain_association.service
+  ]
+}
+
+# Add vylabs as second domain - this will replace the old one, once both are present
+data "aws_route53_zone" "vylabs_zone" {
+  name = local.vylabs_zone
+}
+
+resource "aws_route53_record" "vylabs_record" {
+  zone_id = data.aws_route53_zone.vylabs_zone.zone_id
+  name    = local.vylabs_domain_name
+  type    = "CNAME"
+  ttl     = 300
+  records = [aws_apprunner_service.service.service_url]
+}
+
+# ugly workaround to make terraform evaluate the length at runtime and not at plan time, since the records don't exist before then. ugh.
+resource "aws_route53_record" "vylabs_validation" {
+  count = 2
+  name    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].name
+  type    = tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].type
+  zone_id = data.aws_route53_zone.vylabs_zone.zone_id
   records = [tolist(aws_apprunner_custom_domain_association.service.certificate_validation_records)[count.index].value]
   ttl     = 3600
 
