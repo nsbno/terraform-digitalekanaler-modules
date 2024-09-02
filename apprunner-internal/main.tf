@@ -238,6 +238,12 @@ resource "aws_route53_record" "vylabs_record" {
   records = [aws_apprunner_service.service.service_url]
 }
 
+resource "aws_apprunner_custom_domain_association" "vylabs_service" {
+  domain_name          = aws_route53_record.vylabs_record.name
+  service_arn          = aws_apprunner_service.service.arn
+  enable_www_subdomain = false
+}
+
 # ugly workaround to make terraform evaluate the length at runtime and not at plan time, since the records don't exist before then. ugh.
 resource "aws_route53_record" "vylabs_validation" {
   count = 2
