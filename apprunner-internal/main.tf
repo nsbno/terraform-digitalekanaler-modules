@@ -16,8 +16,11 @@ terraform {
 locals {
   zone        = var.environment == "prod" ? "digital-common-services.vydev.io" : "${var.environment}.digital-common-services.vydev.io"
   domain_name = "${var.application_name}.${local.zone}"
+
   vylabs_zone = var.environment == "prod" ? "vylabs.io" : "${var.environment}.vylabs.io"
-  vylabs_domain_name = "${var.application_name}.${local.vylabs_zone}"
+  sub_domain_name = var.custom_sub_domain == "" ? var.application_name : var.custom_sub_domain
+  
+  vylabs_domain_name = "${local.sub_domain_name}.${local.vylabs_zone}"
   docker_image = "${data.vy_artifact_version.ecr.store}/${data.vy_artifact_version.ecr.path}@${data.vy_artifact_version.ecr.version}"
 }
 

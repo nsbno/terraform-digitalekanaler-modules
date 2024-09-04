@@ -74,3 +74,9 @@ variable "environment" {
     error_message = "The only valid environments are test, stage, service and prod."
   }
 }
+
+variable "custom_sub_domain" {
+  description = "Use custom domain name instead of application_name in App Runner URL"
+  type        = string
+  default = ""
+}
