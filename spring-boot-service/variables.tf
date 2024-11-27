@@ -129,8 +129,8 @@ variable "health_check_override" {
     startPeriod = optional(number)
   })
   default = {
-    interval    = 5
-    timeout     = 2
+    interval    = 30
+    timeout     = 5
     startPeriod = 90
   }
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
@@ -149,13 +149,13 @@ variable "lb_stickiness" {
 
 variable "health_check_grace_period_seconds" {
   type        = number
-  default     = 90
+  default     = 300
   description = "The time that ECS waits before it starts checking the health of the new task."
 }
 
 variable "lb_deregistration_delay" {
   type        = number
-  default     = 30
+  default     = 300
   description = "The time that the load balancer waits before it deregisters a running task."
 }
 
@@ -166,9 +166,9 @@ variable "service_timeouts" {
     delete = optional(string)
   })
   default = {
-    create = "6m"
-    update = "6m"
-    delete = "6m"
+    create = "20m"
+    update = "20m"
+    delete = "20m"
   }
   description = "Timeouts for the service resource."
 }
