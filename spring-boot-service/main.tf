@@ -192,8 +192,8 @@ module "task" {
   lb_health_check = {
     port              = var.port
     path              = "/health"
-    interval          = 10
-    healthy_threshold = 2
+    interval          = 30
+    healthy_threshold = 5
   }
   lb_deregistration_delay = var.lb_deregistration_delay
 
