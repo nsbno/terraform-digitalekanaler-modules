@@ -162,7 +162,7 @@ variable "lb_deregistration_delay" {
 variable "lb_healthy_threshold" {
   type = number
   default = 3
-  description = "Number of consecutive health check successes required before considering a target healthy. The range is 2-10. Defaults to 3."
+  description = "Number of consecutive health check successes required by the load balancer before considering a target healthy. The range is 2-10. Defaults to 3."
 }
 
 variable "service_timeouts" {
