@@ -159,6 +159,12 @@ variable "lb_deregistration_delay" {
   description = "The time that the load balancer waits before it deregisters a running task."
 }
 
+variable "lb_healthy_threshold" {
+  type = number
+  default = 3
+  description = "Number of consecutive health check successes required before considering a target healthy. The range is 2-10. Defaults to 3."
+}
+
 variable "service_timeouts" {
   type = object({
     create = optional(string)
