@@ -102,7 +102,7 @@ module "task" {
   use_spot            = var.use_spot
   cpu                 = var.cpu
   memory              = var.memory
-  rollback_on_failure = true
+  rollback_on_failure = var.rollback_on_failure
 
   wait_for_steady_state             = var.wait_for_steady_state
   health_check_grace_period_seconds = var.health_check_grace_period_seconds

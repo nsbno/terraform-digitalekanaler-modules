@@ -200,3 +200,9 @@ variable "custom_metrics" {
   }))
   default = []
 }
+
+variable "rollback_on_failure" {
+  description = "Should a deployment circuit breaker be enabled for the service? This will rollback the service to the last deployment that completed successfully"
+  type        = bool
+  default     = false
+}
