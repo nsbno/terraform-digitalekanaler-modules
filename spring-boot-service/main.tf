@@ -14,7 +14,7 @@ locals {
 
   datadog_agent_sidecar_container = {
     name              = "datadog-agent"
-    image             = "datadog/agent:latest"
+    image             = "datadog/agent:${var.datadog_agent_version}"
     cpu               = local.datadog_agent_cpu
     memory_soft_limit = local.datadog_agent_soft_memory
 
