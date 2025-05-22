@@ -115,6 +115,11 @@ variable "datadog_agent_cmd_port" {
   default     = 5001
   description = "Sets the DD_CMD_PORT environment variable in the datadog-agent sidecar"
 }
+variable "datadog_agent_version" {
+  type        = string
+  default     = "7.67.0-rc.3-full"
+  description = "Sets image tag for datadog-agent sidecar"
+}
 
 variable "custom_api_gateway_path" {
   type        = string
