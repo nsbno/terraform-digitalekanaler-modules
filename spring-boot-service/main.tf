@@ -29,7 +29,7 @@ locals {
       DD_CHECKS_TAG_CARDINALITY       = "orchestrator"
       DD_DOGSTATSD_TAG_CARDINALITY    = "orchestrator"
       DD_CMD_PORT                     = tostring(var.datadog_agent_cmd_port)
-      DD_REMOTE_CONFIGURATION_ENABLED = false
+      DD_REMOTE_CONFIGURATION_ENABLED = "false"
     }
 
     secrets = {
