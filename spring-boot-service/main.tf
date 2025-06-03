@@ -94,9 +94,9 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=0.14.7"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=codedeploy"
   depends_on         = [terraform_data.no_spot_in_prod]
-  application_name   = local.name_with_prefix
+  service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
   private_subnet_ids = local.shared_config.private_subnet_ids
   cluster_id         = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
@@ -113,11 +113,11 @@ module "task" {
   }
 
   application_container = {
-    name     = local.name_with_prefix
-    image    = var.docker_image
-    port     = var.port
-    protocol = "HTTP"
-    cpu      = local.application_cpu
+    name           = local.name_with_prefix
+    repository_url = var.repository_url
+    port           = var.port
+    protocol       = "HTTP"
+    cpu            = local.application_cpu
     health_check = var.health_check_override == null ? null : {
       retries : 5,
       command : [
@@ -133,7 +133,6 @@ module "task" {
       {
         DD_ENV               = var.datadog_tags.environment
         DD_SERVICE           = var.name
-        DD_VERSION           = var.datadog_tags.version
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
 
@@ -150,7 +149,6 @@ module "task" {
       dockerLabels = {
         "com.datadoghq.tags.env"     = var.datadog_tags.environment
         "com.datadoghq.tags.service" = var.name
-        "com.datadoghq.tags.version" = var.datadog_tags.version
       }
       logConfiguration = {
         logDriver = "awsfirelens",
@@ -211,6 +209,7 @@ module "task" {
     [
       {
         listener_arn      = local.shared_config.lb_internal_listener_arn
+        test_listener_arn = var.test_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
         conditions = [
           { host_header = local.internal_domain_name },

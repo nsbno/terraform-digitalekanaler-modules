@@ -144,11 +144,11 @@ variable "health_check_override" {
 variable "lb_stickiness" {
   type = object({
     type            = optional(string, "app_cookie")
-    enabled         = optional(bool,   true)
+    enabled         = optional(bool, true)
     cookie_duration = optional(number, 86400)
     cookie_name     = string
   })
-  default = null
+  default     = null
   description = "Bind a user's session to a specific target"
 }
 
@@ -165,8 +165,8 @@ variable "lb_deregistration_delay" {
 }
 
 variable "lb_healthy_threshold" {
-  type = number
-  default = 3
+  type        = number
+  default     = 3
   description = "Number of consecutive health check successes required by the load balancer before considering a target healthy. The range is 2-10. Defaults to 3."
 }
 
@@ -187,9 +187,9 @@ variable "service_timeouts" {
 variable "custom_metrics" {
   description = "The custom metrics for autoscaling. Check https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#create-target-tracking-scaling-policy-using-metric-math for more information."
   type = list(object({
-    label = string
-    id    = string
-    expression  = optional(string)
+    label      = string
+    id         = string
+    expression = optional(string)
     metric_stat = optional(object({
       metric = object({
         metric_name = string
@@ -204,4 +204,15 @@ variable "custom_metrics" {
     return_data = bool
   }))
   default = []
+}
+
+variable "repository_url" {
+  description = "The URL of the ECR repository where the docker image is stored."
+  type        = string
+}
+
+variable "test_listener_arn" {
+  description = "ARN of the test listener for the ALB"
+  type        = string
+  default     = null
 }
