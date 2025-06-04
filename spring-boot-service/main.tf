@@ -51,17 +51,6 @@ locals {
           "agent health"
         ]
       }
-
-      extra_options = {
-        user           = "0"
-        mountPoints    = []
-        volumesFrom    = []
-        systemControls = []
-        firelensConfiguration = {
-          type    = null
-          options = {}
-        }
-      }
   }]
 
   # Mirrors the exact keys as datadog agent sidecar container
@@ -73,15 +62,6 @@ locals {
 
     cpu               = local.log_router_cpu
     memory_soft_limit = local.log_router_soft_memory
-    secrets           = {}
-    health_check = {
-      retries     = null
-      timeout     = null
-      interval    = null
-      startPeriod = null
-      command     = []
-    }
-    environment = {}
 
     extra_options = {
       user        = "0"
@@ -205,10 +185,8 @@ module "task" {
 
   custom_metrics = var.custom_metrics
 
-  sidecar_containers = concat(
-    var.disable_datadog_agent ? [] : local.datadog_agent_sidecar_container,
-    local.log_router_sidecar_container
-  )
+  sidecar_containers = var.disable_datadog_agent ? [] : local.datadog_agent_sidecar_container
+  digital_log_router_container = var.disable_datadog_agent ? [] : local.log_router_sidecar_container
 
   lb_health_check = {
     port              = var.port
