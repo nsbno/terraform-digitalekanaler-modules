@@ -19,7 +19,7 @@ locals {
     memory_soft_limit = local.datadog_agent_soft_memory
 
     environment = {
-      DD_ENV                          = var.datadog_tags.environment
+      DD_ENV                          = var.environment
       DD_SERVICE                      = var.name
       ECS_FARGATE                     = "true"
       DD_SITE                         = "datadoghq.eu"
@@ -131,7 +131,7 @@ module "task" {
 
     environment = merge(
       {
-        DD_ENV               = var.datadog_tags.environment
+        DD_ENV               = var.environment
         DD_SERVICE           = var.name
         DD_LOGS_INJECTION    = "true"
         DD_TRACE_SAMPLE_RATE = "1"
@@ -147,7 +147,7 @@ module "task" {
 
     extra_options = {
       dockerLabels = {
-        "com.datadoghq.tags.env"     = var.datadog_tags.environment
+        "com.datadoghq.tags.env"     = var.environment
         "com.datadoghq.tags.service" = var.name
       }
       logConfiguration = {

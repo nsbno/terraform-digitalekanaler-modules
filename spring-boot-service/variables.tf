@@ -92,18 +92,6 @@ variable "wait_for_steady_state" {
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
 }
 
-variable "datadog_tags" {
-  type = object({
-    version     = string
-    environment = string
-  })
-  description = "All logs and traces in datadog should be tagged with version=<the short commit-sha> and environment=<name of environment>"
-  validation {
-    condition     = contains(["test", "stage", "prod"], var.datadog_tags.environment)
-    error_message = "datadog_tags.environment must be one of 'test', 'stage' and 'prod'."
-  }
-}
-
 variable "disable_datadog_agent" {
   type        = bool
   default     = false
