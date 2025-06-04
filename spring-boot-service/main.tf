@@ -209,7 +209,7 @@ module "task" {
     [
       {
         listener_arn      = local.shared_config.lb_internal_listener_arn
-        test_listener_arn = var.test_listener_arn
+        test_listener_arn = local.shared_config.lb_internal_test_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
         conditions = [
           { host_header = local.internal_domain_name },

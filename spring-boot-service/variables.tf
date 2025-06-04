@@ -210,9 +210,3 @@ variable "repository_url" {
   description = "The URL of the ECR repository where the docker image is stored."
   type        = string
 }
-
-variable "test_listener_arn" {
-  description = "ARN of the test listener for the ALB"
-  type        = string
-  default     = null
-}
