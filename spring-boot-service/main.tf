@@ -12,54 +12,76 @@ locals {
 
   api_gateway_path = coalesce(var.custom_api_gateway_path, var.name)
 
-  datadog_agent_sidecar_container = {
-    name              = "datadog-agent"
-    image             = "datadog/agent:${var.datadog_agent_version}"
-    cpu               = local.datadog_agent_cpu
-    memory_soft_limit = local.datadog_agent_soft_memory
+  # Mirrors the exact keys as datadog agent sidecar container
+  # Should be refactored to use Vy IT's built in datadog implementation
+  datadog_agent_sidecar_container = [
+    {
+      name      = "datadog-agent"
+      image     = "datadog/agent:${var.datadog_agent_version}"
+      essential = true
 
-    environment = {
-      DD_ENV                          = var.environment
-      DD_SERVICE                      = var.name
-      ECS_FARGATE                     = "true"
-      DD_SITE                         = "datadoghq.eu"
-      DD_APM_ENABLED                  = "true"
-      DD_APM_IGNORE_RESOURCES         = "/health"
-      DD_DOGSTATSD_NON_LOCAL_TRAFFIC  = "true"
-      DD_CHECKS_TAG_CARDINALITY       = "orchestrator"
-      DD_DOGSTATSD_TAG_CARDINALITY    = "orchestrator"
-      DD_CMD_PORT                     = tostring(var.datadog_agent_cmd_port)
-      DD_REMOTE_CONFIGURATION_ENABLED = "false"
-    }
+      cpu               = local.datadog_agent_cpu
+      memory_soft_limit = local.datadog_agent_soft_memory
 
-    secrets = {
-      DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
-    }
+      environment = {
+        DD_ENV                          = var.environment
+        DD_SERVICE                      = var.name
+        ECS_FARGATE                     = "true"
+        DD_SITE                         = "datadoghq.eu"
+        DD_APM_ENABLED                  = "true"
+        DD_APM_IGNORE_RESOURCES         = "/health"
+        DD_DOGSTATSD_NON_LOCAL_TRAFFIC  = "true"
+        DD_CHECKS_TAG_CARDINALITY       = "orchestrator"
+        DD_DOGSTATSD_TAG_CARDINALITY    = "orchestrator"
+        DD_CMD_PORT                     = tostring(var.datadog_agent_cmd_port)
+        DD_REMOTE_CONFIGURATION_ENABLED = "false"
+      }
 
-    extra_options = {
-      mountPoints    = []
-      volumesFrom    = []
-      systemControls = []
-    }
+      secrets = {
+        DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
+      }
 
-    health_check = {
-      retries : 3,
-      timeout : 5,
-      interval : 10,
-      startPeriod : 15
-      command = [
-        "CMD-SHELL",
-        "agent health"
-      ]
-    }
-  }
+      health_check = {
+        retries : 3,
+        timeout : 5,
+        interval : 10,
+        startPeriod : 15
+        command = [
+          "CMD-SHELL",
+          "agent health"
+        ]
+      }
 
-  log_router_sidecar_container = {
-    name              = "log-router"
-    image             = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
-    essential         = false
+      extra_options = {
+        user           = "0"
+        mountPoints    = []
+        volumesFrom    = []
+        systemControls = []
+        firelensConfiguration = {
+          type    = null
+          options = {}
+        }
+      }
+  }]
+
+  # Mirrors the exact keys as datadog agent sidecar container
+  # Should be refactored to use Vy IT's built in datadog implementation
+  log_router_sidecar_container = [{
+    name      = "log-router"
+    image     = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
+    essential = false
+
     cpu               = local.log_router_cpu
     memory_soft_limit = local.log_router_soft_memory
+    secrets           = {}
+    health_check = {
+      retries     = null
+      timeout     = null
+      interval    = null
+      startPeriod = null
+      command     = []
+    }
+    environment = {}
 
     extra_options = {
       user        = "0"
@@ -75,7 +97,7 @@ locals {
       }
       systemControls = []
     }
-  }
+  }]
 }
 
 #########################################
@@ -184,8 +206,8 @@ module "task" {
   custom_metrics = var.custom_metrics
 
   sidecar_containers = concat(
-    var.disable_datadog_agent ? [] : [local.datadog_agent_sidecar_container],
-    [local.log_router_sidecar_container],
+    var.disable_datadog_agent ? [] : local.datadog_agent_sidecar_container,
+    local.log_router_sidecar_container
   )
 
   lb_health_check = {
