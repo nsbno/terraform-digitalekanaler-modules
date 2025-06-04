@@ -41,11 +41,6 @@ variable "memory" {
   description = "The amount of memory available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
 }
 
-variable "docker_image" {
-  type        = string
-  description = "The docker image of your service."
-}
-
 variable "deprecated_public_domain_name" {
   type        = string
   default     = null
