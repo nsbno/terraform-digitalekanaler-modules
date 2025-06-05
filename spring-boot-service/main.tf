@@ -17,7 +17,7 @@ locals {
   datadog_agent_sidecar_container = [
     {
       name      = "datadog-agent"
-      image     = "datadog/agent:${var.datadog_agent_version}"
+      image     = "public.ecr.aws/datadog/agent:${var.datadog_agent_version}"
       essential = true
 
       cpu               = local.datadog_agent_cpu
