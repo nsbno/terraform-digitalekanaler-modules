@@ -193,3 +193,9 @@ variable "repository_url" {
   description = "The URL of the ECR repository where the docker image is stored."
   type        = string
 }
+
+variable "rollback_window_in_minutes" {
+  description = "The time window in minutes you are able to rollback your service."
+  type        = number
+  default     = 0
+}

@@ -106,6 +106,8 @@ module "task" {
   cpu                = var.cpu
   memory             = var.memory
 
+  rollback_window_in_minutes = var.rollback_window_in_minutes
+
   wait_for_steady_state             = var.wait_for_steady_state
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
   ecs_service_timeouts = {
