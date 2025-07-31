@@ -52,6 +52,12 @@ variable "deprecated_public_domain_name" {
   description = "Do not use this parameter unless you are absolutly sure about what it does. Adds a host-based listening rule in the public load balancer. Does not create a DNS record."
 }
 
+variable "remove_api_gateway_integration" {
+  type        = bool
+  default     = false
+  description = "Change listening rule in the internal load balancer to remove API-gateway integration."
+}
+
 variable "environment_variables" {
   type        = map(string)
   default     = {}

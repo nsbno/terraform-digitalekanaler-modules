@@ -1,6 +1,7 @@
 locals {
-  shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
-  internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
+  shared_config = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
+  internal_domain_name   = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
+  cloudfront_domain_name = "apiv2.${var.environment}.${local.shared_config.hosted_zone_name}"
 
   datadog_agent_cpu         = 64
   log_router_cpu            = 64
@@ -212,8 +213,17 @@ module "task" {
       {
         listener_arn      = local.shared_config.lb_internal_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
+
         conditions = [
-          { host_header = local.internal_domain_name },
+            var.remove_api_gateway_integration == false ?
+            { host_header = {values = [local.internal_domain_name]} } : {
+            host_header = {
+              values = [local.internal_domain_name, local.cloudfront_domain_name]
+            },
+            path_pattern = {
+              values = ["/${var.name}/*"]
+            }
+          }
         ]
       }
     ]
