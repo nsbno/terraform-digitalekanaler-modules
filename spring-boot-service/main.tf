@@ -209,20 +209,33 @@ module "task" {
         ]
       },
     ],
-    [
+
+      var.remove_api_gateway_integration == true ? [] : [
       {
         listener_arn      = local.shared_config.lb_internal_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
 
         conditions = [
-            var.remove_api_gateway_integration == false ?
-            { host_header = {values = [local.internal_domain_name]} } : {
+          {
+            host_header = {
+              values = local.internal_domain_name
+            }
+          }
+        ]
+      }
+    ],
+      var.remove_api_gateway_integration == false ? [] : [
+      {
+        listener_arn      = local.shared_config.lb_internal_listener_arn
+        security_group_id = local.shared_config.lb_internal_security_group_id
+
+        conditions = [
+            {
             host_header = {
               values = [local.internal_domain_name, local.cloudfront_domain_name]
             },
-            path_pattern = {
-              values = ["/${var.name}/*"]
-            }
+            path_pattern = "/${var.name}/*"
+
           }
         ]
       }
@@ -303,6 +316,7 @@ resource "aws_route53_record" "internal_vydev_io_record" {
 }
 
 module "api_gateway" {
+  count        = var.remove_api_gateway_integration ? 0 : 1
   source       = "github.com/nsbno/terraform-digitalekanaler-modules//microservice-apigw-proxy?ref=0.0.2"
   service_name = local.api_gateway_path
   domain_name  = local.internal_domain_name
