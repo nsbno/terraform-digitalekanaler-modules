@@ -96,7 +96,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=codedeploy"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc1"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -293,9 +293,9 @@ resource "aws_route53_record" "internal_vydev_io_record" {
   }
 }
 
-# module "api_gateway" {
-#   source       = "github.com/nsbno/terraform-digitalekanaler-modules//microservice-apigw-proxy?ref=0.0.2"
-#   service_name = local.api_gateway_path
-#   domain_name  = local.internal_domain_name
-#   listener_arn = local.shared_config.lb_internal_listener_arn
-# }
+module "api_gateway" {
+  source       = "github.com/nsbno/terraform-digitalekanaler-modules//microservice-apigw-proxy?ref=0.0.2"
+  service_name = local.api_gateway_path
+  domain_name  = local.internal_domain_name
+  listener_arn = local.shared_config.lb_internal_listener_arn
+}
