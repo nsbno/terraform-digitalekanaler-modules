@@ -59,6 +59,12 @@ variable "environment_secrets" {
   description = "A map of non-sensitive environment variables where the key is the name of the variable and the value is the arn of an SSM parameter."
 }
 
+variable "environment_secrets_from_ssm" {
+  type        = map(string)
+  default     = {}
+  description = "A map of non-sensitive environment variables where the key is the name of the variable and the value is the arn of an SSM parameter."
+}
+
 variable "extra_java_tool_options" {
   type        = string
   default     = ""
@@ -91,17 +97,6 @@ variable "disable_datadog_agent" {
   type        = bool
   default     = false
   description = "Disable the DataDog agent. Disables metrics and APM in DataDog. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
-}
-
-variable "datadog_agent_cmd_port" {
-  type        = number
-  default     = 5001
-  description = "Sets the DD_CMD_PORT environment variable in the datadog-agent sidecar"
-}
-variable "datadog_agent_version" {
-  type        = string
-  default     = "7.67.0-rc.3-full"
-  description = "Sets image tag for datadog-agent sidecar"
 }
 
 variable "custom_api_gateway_path" {
@@ -198,4 +193,9 @@ variable "rollback_window_in_minutes" {
   description = "The time window in minutes you are able to rollback your service."
   type        = number
   default     = 0
+}
+
+variable "datadog_team_name" {
+  type        = string
+  description = "The team name that is used in the 'team' tag in DataDog."
 }

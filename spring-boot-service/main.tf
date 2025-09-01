@@ -2,82 +2,13 @@ locals {
   shared_config        = nonsensitive(jsondecode(data.aws_ssm_parameter.shared_config.value))
   internal_domain_name = "${var.name}.${local.shared_config.internal_hosted_zone_name}"
 
-  datadog_agent_cpu         = 64
-  log_router_cpu            = 64
-  application_cpu           = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
-  datadog_agent_soft_memory = 256
-  log_router_soft_memory    = 100
+  datadog_agent_cpu = 64
+  log_router_cpu    = 64
+  application_cpu   = var.cpu - local.datadog_agent_cpu - local.log_router_cpu
 
   name_with_prefix = var.name_prefix == "" ? var.name : "${var.name_prefix}-${var.name}"
 
   api_gateway_path = coalesce(var.custom_api_gateway_path, var.name)
-
-  # Mirrors the exact keys as datadog agent sidecar container
-  # Should be refactored to use Vy IT's built in datadog implementation
-  datadog_agent_sidecar_container = [
-    {
-      name      = "datadog-agent"
-      image     = "public.ecr.aws/datadog/agent:${var.datadog_agent_version}"
-      essential = true
-
-      cpu               = local.datadog_agent_cpu
-      memory_soft_limit = local.datadog_agent_soft_memory
-
-      environment = {
-        DD_ENV                          = var.environment
-        DD_SERVICE                      = var.name
-        ECS_FARGATE                     = "true"
-        DD_SITE                         = "datadoghq.eu"
-        DD_APM_ENABLED                  = "true"
-        DD_APM_IGNORE_RESOURCES         = "/health"
-        DD_DOGSTATSD_NON_LOCAL_TRAFFIC  = "true"
-        DD_CHECKS_TAG_CARDINALITY       = "orchestrator"
-        DD_DOGSTATSD_TAG_CARDINALITY    = "orchestrator"
-        DD_CMD_PORT                     = tostring(var.datadog_agent_cmd_port)
-        DD_REMOTE_CONFIGURATION_ENABLED = "false"
-      }
-
-      secrets = {
-        DD_API_KEY = data.aws_ssm_parameter.datadog_apikey.arn,
-      }
-
-      health_check = {
-        retries : 3,
-        timeout : 5,
-        interval : 10,
-        startPeriod : 15
-        command = [
-          "CMD-SHELL",
-          "agent health"
-        ]
-      }
-  }]
-
-  # Mirrors the exact keys as datadog agent sidecar container
-  # Should be refactored to use Vy IT's built in datadog implementation
-  log_router_sidecar_container = [{
-    name      = "log-router"
-    image     = nonsensitive(data.aws_ssm_parameter.log_router_image.value)
-    essential = false
-
-    cpu               = local.log_router_cpu
-    memory_soft_limit = local.log_router_soft_memory
-
-    extra_options = {
-      user        = "0"
-      mountPoints = []
-      volumesFrom = []
-      firelensConfiguration = {
-        type = "fluentbit"
-        options = {
-          "enable-ecs-log-metadata" = "true"
-          "config-file-type"        = "file"
-          "config-file-value"       = "/fluent-bit/configs/parse-json.conf"
-        }
-      }
-      systemControls = []
-    }
-  }]
 }
 
 #########################################
@@ -96,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc1"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc2"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -105,6 +36,12 @@ module "task" {
   use_spot           = var.use_spot
   cpu                = var.cpu
   memory             = var.memory
+
+  enable_datadog                  = var.disable_datadog_agent ? false : true
+  datadog_instrumentation_runtime = "jvm" # Can be jvm or node
+  team_name_override              = var.datadog_team_name
+
+  datadog_api_key_secret_arn = data.aws_secretsmanager_secret.datadog_api_key.arn
 
   rollback_window_in_minutes = var.rollback_window_in_minutes
 
@@ -135,11 +72,6 @@ module "task" {
 
     environment = merge(
       {
-        DD_ENV               = var.environment
-        DD_SERVICE           = var.name
-        DD_LOGS_INJECTION    = "true"
-        DD_TRACE_SAMPLE_RATE = "1"
-
         JAVA_TOOL_OPTIONS = var.disable_datadog_agent ? var.extra_java_tool_options : "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
 
         VY_DATADOG_AGENT_ENABLED = var.disable_datadog_agent ? "false" : "true"
@@ -147,33 +79,8 @@ module "task" {
       var.environment_variables
     )
 
-    secrets = var.environment_secrets
-
-    extra_options = {
-      dockerLabels = {
-        "com.datadoghq.tags.env"     = var.environment
-        "com.datadoghq.tags.service" = var.name
-      }
-      logConfiguration = {
-        logDriver = "awsfirelens",
-        options = {
-          Name       = "datadog",
-          Host       = "http-intake.logs.datadoghq.eu",
-          TLS        = "on"
-          dd_service = var.name,
-          dd_source  = "java",
-          dd_tags    = "${var.name}:fluentbit",
-          provider   = "ecs"
-        }
-        secretOptions = [{
-          name      = "apikey",
-          valueFrom = data.aws_ssm_parameter.datadog_apikey.arn
-        }]
-      }
-      mountPoints    = []
-      volumesFrom    = []
-      systemControls = []
-    }
+    secrets          = var.environment_secrets
+    secrets_from_ssm = var.environment_secrets_from_ssm
   }
 
   deployment_minimum_healthy_percent = var.autoscaling.minimum_healthy_percent
@@ -186,9 +93,6 @@ module "task" {
   }
 
   custom_metrics = var.custom_metrics
-
-  sidecar_containers = var.disable_datadog_agent ? [] : local.datadog_agent_sidecar_container
-  digital_log_router_container = var.disable_datadog_agent ? [] : local.log_router_sidecar_container
 
   lb_health_check = {
     port              = var.port
@@ -251,11 +155,6 @@ data "aws_kms_alias" "common_config_key" {
 
 data "aws_iam_policy_document" "fargate_task_policy_document" {
   statement {
-    actions = ["ssm:GetParameters"]
-
-    resources = concat(values(var.environment_secrets), [data.aws_ssm_parameter.datadog_apikey.arn])
-  }
-  statement {
     actions = ["kms:Decrypt"]
 
     resources = [
@@ -298,4 +197,34 @@ module "api_gateway" {
   service_name = local.api_gateway_path
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
+}
+
+
+##########################################
+#                                       #
+# DATADOG                               #
+#                                       #
+##########################################
+
+data "aws_secretsmanager_secret" "datadog_api_key" {
+  name = "datadog/api-key"
+}
+
+data "aws_iam_policy_document" "secrets_manager" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+
+    resources = [
+      data.aws_secretsmanager_secret.datadog_api_key.arn,
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "secrets_manager" {
+  role   = module.task.task_execution_role_name
+  policy = data.aws_iam_policy_document.secrets_manager.json
 }
