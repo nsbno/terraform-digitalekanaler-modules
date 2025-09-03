@@ -72,8 +72,6 @@ module "task" {
 
     environment = merge(
       {
-        JAVA_TOOL_OPTIONS = var.disable_datadog_agent ? var.extra_java_tool_options : "-javaagent:/application/dd-java-agent.jar ${var.extra_java_tool_options}"
-
         VY_DATADOG_AGENT_ENABLED = var.disable_datadog_agent ? "false" : "true"
       },
       var.environment_variables
