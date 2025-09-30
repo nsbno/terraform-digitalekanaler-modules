@@ -44,7 +44,7 @@ variable "memory" {
 variable "add_cloudfront_vpc_origin_integration" {
   type        = bool
   default     = false
-  description = "Add listener rule in the internal ALB to cloudFront can communicate directly with ALB."
+  description = "Add listener rule in the internal ALB so cloudFront can communicate directly with ALB."
 }
 
 variable "deprecated_public_domain_name" {
