@@ -41,6 +41,12 @@ variable "memory" {
   description = "The amount of memory available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
 }
 
+variable "add_cloudfront_vpc_origin_integration" {
+  type        = bool
+  default     = false
+  description = "Add listener rule in the internal ALB so cloudFront can communicate directly with ALB."
+}
+
 variable "deprecated_public_domain_name" {
   type        = string
   default     = null

@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=725fe2b"
+  source = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc7"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -116,8 +116,16 @@ module "task" {
         test_listener_arn = local.shared_config.lb_internal_test_listener_arn
         security_group_id = local.shared_config.lb_internal_security_group_id
         conditions = [
-          { host_header = local.internal_domain_name },
-        ]
+          { host_header = local.internal_domain_name }
+        ],
+        // Add custom header to identify the service in the ALB when using CloudFront with VPC origin
+        additional_conditions = var.add_cloudfront_vpc_origin_integration == false ? []: [
+          {
+            http_header = {
+              name   = "X-Service"
+              values = [var.name]
+            }
+        }]
       }
     ]
   )
