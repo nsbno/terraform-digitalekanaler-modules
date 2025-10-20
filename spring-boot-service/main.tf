@@ -88,6 +88,8 @@ module "task" {
     max_capacity = var.autoscaling.max_number_of_instances
     metric_type  = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
     target_value = tostring(var.autoscaling.target)
+    scale_in_cooldown = var.autoscaling.scale_in_cooldown
+    scale_out_cooldown = var.autoscaling.scale_out_cooldown
   }
 
   custom_metrics = var.custom_metrics
