@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc11"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc11"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -82,17 +82,20 @@ module "task" {
   }
 
   deployment_minimum_healthy_percent = var.autoscaling.minimum_healthy_percent
-
-  autoscaling = {
-    min_capacity = var.autoscaling.min_number_of_instances
-    max_capacity = var.autoscaling.max_number_of_instances
-    metric_type  = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
-    target_value = tostring(var.autoscaling.target)
-    scale_in_cooldown = var.autoscaling.scale_in_cooldown
-    scale_out_cooldown = var.autoscaling.scale_out_cooldown
+  autoscaling_capacity = {
+    min = var.autoscaling.min_number_of_instances
+    max = var.autoscaling.max_number_of_instances
   }
 
-  custom_metrics = var.custom_metrics
+  autoscaling_policies = [
+    {
+      custom_metrics         = var.custom_metrics
+      predefined_metric_type = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
+      target_value           = tostring(var.autoscaling.target)
+      scale_in_cooldown      = var.autoscaling.scale_in_cooldown
+      scale_out_cooldown     = var.autoscaling.scale_out_cooldown
+    }
+  ]
 
   lb_health_check = {
     port              = var.port
@@ -121,7 +124,7 @@ module "task" {
           { host_header = local.internal_domain_name }
         ],
         // Add custom header to identify the service in the ALB when using CloudFront with VPC origin
-        additional_conditions = var.add_cloudfront_vpc_origin_integration == false ? []: [
+        additional_conditions = var.add_cloudfront_vpc_origin_integration == false ? [] : [
           {
             http_header = {
               name   = "X-Service"
