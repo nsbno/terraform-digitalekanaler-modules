@@ -14,17 +14,49 @@ variable "port" {
   description = "The port number that your service is listening for http requets on."
 }
 
-variable "autoscaling" {
+
+variable "autoscaling_capacity" {
+  description = "The min and max number of instances to scale to."
   type = object({
-    min_number_of_instances = optional(number, 3)
-    max_number_of_instances = optional(number, 3)
-    metric_type             = optional(string, "ECSServiceAverageCPUUtilization")
-    target                  = optional(number, 50)
-    minimum_healthy_percent = optional(number, 100)
+    min = number
+    max = number
+  })
+  default = { min = 3, max = 3 }
+}
+
+variable "autoscaling_policies" {
+  description = "Enable autoscaling for the service"
+  type = list(object({
+    target_value       = optional(number, 50)
     scale_in_cooldown  = optional(number, 300)
     scale_out_cooldown  = optional(number, 300)
-  })
-  description = "Settings that control how many instances your service is running on."
+
+    predefined_metric_type = optional(string) # https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
+    resource_label         = optional(string) # only valid when predefined_metric_type is ALBRequestCountPerTarget
+
+    custom_metrics = optional(list(object({
+      label       = string
+      id          = string
+      expression  = optional(string)
+      return_data = optional(bool)
+      metric_stat = optional(object({
+        stat = string
+        metric = object({
+          metric_name = string
+          namespace   = string
+          dimensions  = list(object({ name = string, value = string }))
+        })
+      }))
+    })))
+  }))
+  default = [
+    {
+      target_value           = 50
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+      scale_in_cooldown      = 300
+      scale_out_cooldown     = 300
+    }
+  ]
 }
 
 variable "cpu" {
@@ -101,6 +133,12 @@ variable "wait_for_steady_state" {
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
 }
 
+variable "deployment_minimum_healthy_percent" {
+  default     = 100
+  type        = number
+  description = "The lower limit of the number of running tasks that must remain running and healthy in a service during a deployment"
+}
+
 variable "disable_datadog_agent" {
   type        = bool
   default     = false
@@ -168,28 +206,6 @@ variable "service_timeouts" {
     delete = "20m"
   }
   description = "Timeouts for the service resource."
-}
-
-variable "custom_metrics" {
-  description = "The custom metrics for autoscaling. Check https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#create-target-tracking-scaling-policy-using-metric-math for more information."
-  type = list(object({
-    label      = string
-    id         = string
-    expression = optional(string)
-    metric_stat = optional(object({
-      metric = object({
-        metric_name = string
-        namespace   = string
-        dimensions = list(object({
-          name  = string
-          value = string
-        }))
-      })
-      stat = string
-    }))
-    return_data = bool
-  }))
-  default = []
 }
 
 variable "repository_url" {

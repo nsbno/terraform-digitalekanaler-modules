@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc11"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc11"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -81,19 +81,18 @@ module "task" {
     secrets_from_ssm = var.environment_secrets_from_ssm
   }
 
-  deployment_minimum_healthy_percent = var.autoscaling.minimum_healthy_percent
-
-  autoscaling = {
-    min_capacity = var.autoscaling.min_number_of_instances
-    max_capacity = var.autoscaling.max_number_of_instances
-    metric_type  = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
-    target_value = tostring(var.autoscaling.target)
-    scale_in_cooldown = var.autoscaling.scale_in_cooldown
-    scale_out_cooldown = var.autoscaling.scale_out_cooldown
-  }
-
-  custom_metrics = var.custom_metrics
-
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  autoscaling_capacity = var.autoscaling_capacity
+  autoscaling_policies = [
+    for policy in var.autoscaling_policies : {
+      target_value           = policy.target_value
+      scale_in_cooldown      = policy.scale_in_cooldown
+      scale_out_cooldown     = policy.scale_out_cooldown
+      predefined_metric_type = policy.custom_metrics != null && length(policy.custom_metrics) > 0 ? null : policy.predefined_metric_type
+      resource_label         = policy.resource_label
+      custom_metrics         = policy.custom_metrics
+    }
+  ]
   lb_health_check = {
     port              = var.port
     path              = "/health"
@@ -121,7 +120,7 @@ module "task" {
           { host_header = local.internal_domain_name }
         ],
         // Add custom header to identify the service in the ALB when using CloudFront with VPC origin
-        additional_conditions = var.add_cloudfront_vpc_origin_integration == false ? []: [
+        additional_conditions = var.add_cloudfront_vpc_origin_integration == false ? [] : [
           {
             http_header = {
               name   = "X-Service"
