@@ -43,9 +43,10 @@ variable "memory" {
   description = "The amount of memory available to one instance of your service (a small fraction will be used for the sidecar containers that are responsible for monitoring)."
 }
 
-variable "docker_image" {
-  type        = string
-  description = "The docker image of your service."
+variable "add_cloudfront_vpc_origin_integration" {
+  type        = bool
+  default     = false
+  description = "Add listener rule in the internal ALB so cloudFront can communicate directly with ALB."
 }
 
 variable "deprecated_public_domain_name" {
@@ -61,6 +62,12 @@ variable "environment_variables" {
 }
 
 variable "environment_secrets" {
+  type        = map(string)
+  default     = {}
+  description = "A map of non-sensitive environment variables where the key is the name of the variable and the value is the arn of an SSM parameter."
+}
+
+variable "environment_secrets_from_ssm" {
   type        = map(string)
   default     = {}
   description = "A map of non-sensitive environment variables where the key is the name of the variable and the value is the arn of an SSM parameter."
@@ -90,37 +97,14 @@ variable "use_spot" {
 
 variable "wait_for_steady_state" {
   type        = bool
-  default     = true
+  default     = false
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
-}
-
-variable "datadog_tags" {
-  type = object({
-    version     = string
-    environment = string
-  })
-  description = "All logs and traces in datadog should be tagged with version=<the short commit-sha> and environment=<name of environment>"
-  validation {
-    condition     = contains(["test", "stage", "prod"], var.datadog_tags.environment)
-    error_message = "datadog_tags.environment must be one of 'test', 'stage' and 'prod'."
-  }
 }
 
 variable "disable_datadog_agent" {
   type        = bool
   default     = false
   description = "Disable the DataDog agent. Disables metrics and APM in DataDog. Used for saving money in DataDog. The VY_DATADOG_AGENT_ENABLED environment variable is set to 'true' or 'false' in the application container."
-}
-
-variable "datadog_agent_cmd_port" {
-  type        = number
-  default     = 5001
-  description = "Sets the DD_CMD_PORT environment variable in the datadog-agent sidecar"
-}
-variable "datadog_agent_version" {
-  type        = string
-  default     = "7.67.0-rc.3-full"
-  description = "Sets image tag for datadog-agent sidecar"
 }
 
 variable "custom_api_gateway_path" {
@@ -146,11 +130,11 @@ variable "health_check_override" {
 variable "lb_stickiness" {
   type = object({
     type            = optional(string, "app_cookie")
-    enabled         = optional(bool,   true)
+    enabled         = optional(bool, true)
     cookie_duration = optional(number, 86400)
     cookie_name     = string
   })
-  default = null
+  default     = null
   description = "Bind a user's session to a specific target"
 }
 
@@ -167,8 +151,8 @@ variable "lb_deregistration_delay" {
 }
 
 variable "lb_healthy_threshold" {
-  type = number
-  default = 3
+  type        = number
+  default     = 3
   description = "Number of consecutive health check successes required by the load balancer before considering a target healthy. The range is 2-10. Defaults to 3."
 }
 
@@ -189,9 +173,9 @@ variable "service_timeouts" {
 variable "custom_metrics" {
   description = "The custom metrics for autoscaling. Check https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#create-target-tracking-scaling-policy-using-metric-math for more information."
   type = list(object({
-    label = string
-    id    = string
-    expression  = optional(string)
+    label      = string
+    id         = string
+    expression = optional(string)
     metric_stat = optional(object({
       metric = object({
         metric_name = string
@@ -206,4 +190,20 @@ variable "custom_metrics" {
     return_data = bool
   }))
   default = []
+}
+
+variable "repository_url" {
+  description = "The URL of the ECR repository where the docker image is stored."
+  type        = string
+}
+
+variable "rollback_window_in_minutes" {
+  description = "The time window in minutes you are able to rollback your service."
+  type        = number
+  default     = 0
+}
+
+variable "datadog_team_name" {
+  type        = string
+  description = "The team name that is used in the 'team' tag in DataDog."
 }
