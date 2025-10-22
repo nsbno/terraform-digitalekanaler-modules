@@ -81,22 +81,18 @@ module "task" {
     secrets_from_ssm = var.environment_secrets_from_ssm
   }
 
-  deployment_minimum_healthy_percent = var.autoscaling.minimum_healthy_percent
-  autoscaling_capacity = {
-    min = var.autoscaling.min_number_of_instances
-    max = var.autoscaling.max_number_of_instances
-  }
-
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  autoscaling_capacity = var.autoscaling_capacity
   autoscaling_policies = [
-    {
-      custom_metrics         = var.custom_metrics
-      predefined_metric_type = length(var.custom_metrics) > 0 ? "" : var.autoscaling.metric_type
-      target_value           = tostring(var.autoscaling.target)
-      scale_in_cooldown      = var.autoscaling.scale_in_cooldown
-      scale_out_cooldown     = var.autoscaling.scale_out_cooldown
+    for policy in var.autoscaling_policies : {
+      target_value           = policy.target_value
+      scale_in_cooldown      = policy.scale_in_cooldown
+      scale_out_cooldown     = policy.scale_out_cooldown
+      predefined_metric_type = policy.custom_metrics != null && length(policy.custom_metrics) > 0 ? null : policy.predefined_metric_type
+      resource_label         = policy.resource_label
+      custom_metrics         = policy.custom_metrics
     }
   ]
-
   lb_health_check = {
     port              = var.port
     path              = "/health"
