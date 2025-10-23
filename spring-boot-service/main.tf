@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc11"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc12"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -83,16 +83,7 @@ module "task" {
 
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   autoscaling_capacity = var.autoscaling_capacity
-  autoscaling_policies = [
-    for policy in var.autoscaling_policies : {
-      target_value           = policy.target_value
-      scale_in_cooldown      = policy.scale_in_cooldown
-      scale_out_cooldown     = policy.scale_out_cooldown
-      predefined_metric_type = policy.custom_metrics != null && length(policy.custom_metrics) > 0 ? null : policy.predefined_metric_type
-      resource_label         = policy.resource_label
-      custom_metrics         = policy.custom_metrics
-    }
-  ]
+  autoscaling_policies = var.autoscaling_policies
   lb_health_check = {
     port              = var.port
     path              = "/health"

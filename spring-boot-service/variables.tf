@@ -21,15 +21,15 @@ variable "autoscaling_capacity" {
     min = number
     max = number
   })
-  default = { min = 3, max = 3 }
+  default = { min = 1, max = 3 }
 }
 
 variable "autoscaling_policies" {
   description = "Enable autoscaling for the service"
   type = list(object({
-    target_value       = optional(number, 50)
-    scale_in_cooldown  = optional(number, 300)
-    scale_out_cooldown  = optional(number, 300)
+    target_value       = optional(number)
+    scale_in_cooldown  = optional(number)
+    scale_out_cooldown = optional(number)
 
     predefined_metric_type = optional(string) # https://docs.aws.amazon.com/autoscaling/application/APIReference/API_PredefinedMetricSpecification.html
     resource_label         = optional(string) # only valid when predefined_metric_type is ALBRequestCountPerTarget
@@ -49,14 +49,7 @@ variable "autoscaling_policies" {
       }))
     })))
   }))
-  default = [
-    {
-      target_value           = 50
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-      scale_in_cooldown      = 300
-      scale_out_cooldown     = 300
-    }
-  ]
+  default = []
 }
 
 variable "cpu" {
