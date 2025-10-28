@@ -126,6 +126,12 @@ variable "wait_for_steady_state" {
   description = "Terraform waits until the new version of the task is rolled out and working, instead of exiting before the rollout."
 }
 
+variable "force_new_deployment" {
+  type        = bool
+  default     = false
+  description = "Terraform will force new deployment if set to true."
+}
+
 variable "deployment_minimum_healthy_percent" {
   default     = 100
   type        = number
