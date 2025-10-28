@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc13"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc12"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -46,7 +46,6 @@ module "task" {
   rollback_window_in_minutes = var.rollback_window_in_minutes
 
   wait_for_steady_state             = var.wait_for_steady_state
-  force_new_deployment              = var.force_new_deployment
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
   ecs_service_timeouts = {
     create = var.service_timeouts.create
