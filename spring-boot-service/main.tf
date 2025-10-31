@@ -43,7 +43,8 @@ module "task" {
 
   datadog_api_key_secret_arn = data.aws_secretsmanager_secret.datadog_api_key.arn
 
-  rollback_window_in_minutes = var.rollback_window_in_minutes
+  rollback_window_in_minutes        = var.rollback_window_in_minutes
+  deployment_configuration_strategy = var.deployment_configuration_strategy
 
   wait_for_steady_state             = var.wait_for_steady_state
   force_new_deployment              = var.force_new_deployment
@@ -83,8 +84,8 @@ module "task" {
   }
 
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
-  autoscaling_capacity = var.autoscaling_capacity
-  autoscaling_policies = var.autoscaling_policies
+  autoscaling_capacity               = var.autoscaling_capacity
+  autoscaling_policies               = var.autoscaling_policies
   lb_health_check = {
     port              = var.port
     path              = "/health"
