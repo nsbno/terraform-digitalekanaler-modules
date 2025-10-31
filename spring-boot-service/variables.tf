@@ -213,7 +213,7 @@ variable "repository_url" {
 }
 
 variable "rollback_window_in_minutes" {
-  description = "The time window in minutes you are able to rollback your service. When is larger that 0, use BLUE_GREEN strategy."
+  description = "The time window in minutes you are able to rollback your service. When it's > 0, you must use BLUE_GREEN strategy."
   type        = number
   default     = 0
 }
