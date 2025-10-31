@@ -213,9 +213,20 @@ variable "repository_url" {
 }
 
 variable "rollback_window_in_minutes" {
-  description = "The time window in minutes you are able to rollback your service."
+  description = "The time window in minutes you are able to rollback your service. When is larger that 0, use BLUE_GREEN strategy."
   type        = number
   default     = 0
+}
+
+variable "deployment_configuration_strategy" {
+  description = "The deployment strategy to use for the service. Valid values are ROLLING, BLUE_GREEN"
+  type        = string
+  default     = "ROLLING"
+
+  validation {
+    condition     = contains(["ROLLING", "BLUE_GREEN"], var.deployment_configuration_strategy)
+    error_message = "The deployment_strategy must be one of: ROLLING, BLUE_GREEN"
+  }
 }
 
 variable "datadog_team_name" {
