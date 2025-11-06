@@ -154,6 +154,12 @@ data "aws_kms_alias" "common_config_key" {
 #########################################
 
 data "aws_iam_policy_document" "fargate_task_policy_document" {
+  // The GetParameters permission is needed when migrating to the new DP for first time.
+  statement {
+    actions = ["ssm:GetParameters"]
+
+    resources = [data.aws_ssm_parameter.datadog_apikey.arn]
+  }
   statement {
     actions = ["kms:Decrypt"]
 
