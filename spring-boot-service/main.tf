@@ -84,6 +84,7 @@ module "task" {
   }
 
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  desired_count                      = var.desired_count == null ? var.autoscaling_capacity.min : var.desired_count
   autoscaling_capacity               = var.autoscaling_capacity
   autoscaling_policies               = var.autoscaling_policies
   lb_health_check = {
