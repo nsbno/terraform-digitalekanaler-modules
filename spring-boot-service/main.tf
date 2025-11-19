@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc13"
+  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc15"
   depends_on         = [terraform_data.no_spot_in_prod]
   service_name       = local.name_with_prefix
   vpc_id             = local.shared_config.vpc_id
@@ -87,10 +87,12 @@ module "task" {
   autoscaling_capacity               = var.autoscaling_capacity
   autoscaling_policies               = var.autoscaling_policies
   lb_health_check = {
-    port              = var.port
-    path              = "/health"
-    interval          = 30
-    healthy_threshold = var.lb_healthy_threshold
+    port                = var.port
+    path                = "/health"
+    interval            = 30
+    healthy_threshold   = var.lb_healthy_threshold
+    unhealthy_threshold = var.lb_unhealthy_threshold
+    slow_start          = var.lb_slow_start
   }
   lb_deregistration_delay = var.lb_deregistration_delay
 

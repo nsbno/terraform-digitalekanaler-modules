@@ -187,10 +187,22 @@ variable "lb_deregistration_delay" {
   description = "The time that the load balancer waits before it deregisters a running task."
 }
 
+variable "lb_slow_start" {
+  type        = number
+  default     = 0
+  description = "The time period, in seconds, during which the load balancer allows the newly registered targets to warm up before sending them a full share of requests."
+}
+
 variable "lb_healthy_threshold" {
   type        = number
   default     = 3
   description = "Number of consecutive health check successes required by the load balancer before considering a target healthy. The range is 2-10. Defaults to 3."
+}
+
+variable "lb_unhealthy_threshold" {
+  type        = number
+  default     = 3
+  description = "Number of consecutive health check failures required by the load balancer before considering a target unhealthy. The range is 2-10. Defaults to 3."
 }
 
 variable "service_timeouts" {
