@@ -92,9 +92,9 @@ module "task" {
     interval            = 30
     healthy_threshold   = var.lb_healthy_threshold
     unhealthy_threshold = var.lb_unhealthy_threshold
-    slow_start          = var.lb_slow_start
   }
   lb_deregistration_delay = var.lb_deregistration_delay
+  slow_start              = var.lb_slow_start
 
   lb_listeners = concat(
     var.deprecated_public_domain_name == null ? [] : [
