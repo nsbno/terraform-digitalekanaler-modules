@@ -14,6 +14,11 @@ variable "port" {
   description = "The port number that your service is listening for http requets on."
 }
 
+variable "desired_count" {
+  description = "The number of instances of the task definitions to place and keep running."
+  type        = number
+  default     = null
+}
 
 variable "autoscaling_capacity" {
   description = "The min and max number of instances to scale to."
