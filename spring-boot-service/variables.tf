@@ -169,6 +169,12 @@ variable "health_check_override" {
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
 }
 
+variable "stop_timeout" {
+  type = number
+  default = null
+  description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. If the parameter isn't specified, then the default value of 30 seconds is used. The maximum value is 120 seconds."
+}
+
 variable "lb_stickiness" {
   type = object({
     type            = optional(string, "app_cookie")

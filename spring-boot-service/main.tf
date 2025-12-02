@@ -27,16 +27,15 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source             = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc15"
-  depends_on         = [terraform_data.no_spot_in_prod]
-  service_name       = local.name_with_prefix
-  vpc_id             = local.shared_config.vpc_id
-  private_subnet_ids = local.shared_config.private_subnet_ids
-  cluster_id         = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
-  use_spot           = var.use_spot
-  cpu                = var.cpu
-  memory             = var.memory
-
+  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0-rc17"
+  depends_on                      = [terraform_data.no_spot_in_prod]
+  service_name                    = local.name_with_prefix
+  vpc_id                          = local.shared_config.vpc_id
+  private_subnet_ids              = local.shared_config.private_subnet_ids
+  cluster_id                      = var.use_spot ? local.shared_config.ecs_spot_cluster_id : local.shared_config.ecs_cluster_id
+  use_spot                        = var.use_spot
+  cpu                             = var.cpu
+  memory                          = var.memory
   enable_datadog                  = var.disable_datadog_agent ? false : true
   datadog_instrumentation_runtime = "jvm" # Can be jvm or node
   team_name_override              = var.datadog_team_name
@@ -71,7 +70,7 @@ module "task" {
       interval : var.health_check_override.interval,
       startPeriod : try(var.health_check_override.startPeriod, null)
     }
-
+    stop_timeout = var.stop_timeout
     environment = merge(
       {
         VY_DATADOG_AGENT_ENABLED = var.disable_datadog_agent ? "false" : "true"
