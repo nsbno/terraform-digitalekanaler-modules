@@ -5,7 +5,6 @@ variable "name" {
 
 variable "name_prefix" {
   type    = string
-  default = "digitalekanaler"
 }
 
 variable "port" {
@@ -230,9 +229,8 @@ variable "service_timeouts" {
   description = "Timeouts for the service resource."
 }
 
-variable "repository_url" {
-  description = "The URL of the ECR repository where the docker image is stored."
-  type        = string
+variable "image" {
+  description = "The ECR image for the ECS service to run."
 }
 
 variable "rollback_window_in_minutes" {
