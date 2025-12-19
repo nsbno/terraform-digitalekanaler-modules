@@ -5,7 +5,6 @@ variable "name" {
 
 variable "name_prefix" {
   type    = string
-  default = "digitalekanaler"
 }
 
 variable "port" {
