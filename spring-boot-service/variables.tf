@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "name_prefix" {
-  type    = string
+  type = string
 }
 
 variable "port" {
@@ -169,8 +169,8 @@ variable "health_check_override" {
 }
 
 variable "stop_timeout" {
-  type = number
-  default = null
+  type        = number
+  default     = null
   description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. If the parameter isn't specified, then the default value of 30 seconds is used. The maximum value is 120 seconds."
 }
 
@@ -254,3 +254,26 @@ variable "datadog_team_name" {
   type        = string
   description = "The team name that is used in the 'team' tag in DataDog."
 }
+
+variable "enable_service_connect" {
+  type        = bool
+  default     = false
+  description = "Enable AWS ECS Service Connect for service-to-service communication. When enabled, services can communicate via <service-name>.internal.<environment>.digitalekanaler.vydev.io"
+}
+
+variable "service_connect_port_name" {
+  type        = string
+  default     = "http"
+  description = "The name of the port mapping for Service Connect. This is used for service discovery."
+}
+
+
+variable "service_connect_client_aliases" {
+  type = list(object({
+    port     = number
+    dns_name = optional(string)
+  }))
+  default     = null
+  description = "List of client aliases for Service Connect. If not specified, defaults to the service port with DNS name based on service name and environment."
+}
+
