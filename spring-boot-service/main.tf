@@ -25,7 +25,12 @@ locals {
       namespace = var.service_connect_configuration.namespace != null ? var.service_connect_configuration.namespace : local.service_connect_namespace
       client_aliases = var.service_connect_configuration.client_aliases != null ? var.service_connect_configuration.client_aliases : local.service_connect_client_aliases
     }
-  ) : null
+  ) :  merge(
+    var.service_connect_configuration,
+    {
+      enabled = false
+    }
+  )
 
 }
 
