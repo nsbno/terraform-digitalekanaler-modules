@@ -255,25 +255,45 @@ variable "datadog_team_name" {
   description = "The team name that is used in the 'team' tag in DataDog."
 }
 
-variable "enable_service_connect" {
+
+variable "service_connect_configuration" {
+  description = "Configuration for ECS Service Connect with HTTP-only DNS-based service discovery"
+  type = object({
+    enabled   = bool
+    namespace = optional(string)
+
+    # Client aliases for DNS resolution - supports multiple aliases
+    client_aliases = optional(list(object({
+      port     = number
+      dns_name = string # DNS name for this alias
+    })))
+
+    # Optional configuration
+    discovery_name = optional(string) # Discovery name for the service (defaults to service_name)
+    timeout = optional(object({
+      idle_timeout_seconds        = optional(number)
+      per_request_timeout_seconds = optional(number)
+    }))
+
+    log_configuration = optional(object({
+      log_driver = string
+      options    = optional(map(string))
+      secret_options = optional(list(object({
+        name       = string
+        value_from = string
+      })))
+    }))
+  })
+  default = {
+    enabled = false
+  }
+}
+
+variable "enable_execute_command" {
   type        = bool
   default     = false
-  description = "Enable AWS ECS Service Connect for service-to-service communication. When enabled, services can communicate via <service-name>.internal.<environment>.digitalekanaler.vydev.io"
-}
-
-variable "service_connect_port_name" {
-  type        = string
-  default     = "http"
-  description = "The name of the port mapping for Service Connect. This is used for service discovery."
+  description = "Enable ECS Exec for the service."
 }
 
 
-variable "service_connect_client_aliases" {
-  type = list(object({
-    port     = number
-    dns_name = optional(string)
-  }))
-  default     = null
-  description = "List of client aliases for Service Connect. If not specified, defaults to the service port with DNS name based on service name and environment."
-}
 

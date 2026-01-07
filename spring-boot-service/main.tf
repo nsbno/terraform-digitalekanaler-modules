@@ -11,15 +11,22 @@ locals {
   api_gateway_path = coalesce(var.custom_api_gateway_path, var.name)
 
   # Service Connect configuration (HTTP only)
-  # For prod: internal.digitalekanaler.vydev.io
-  # For other envs: internal.<environment>.digitalekanaler.vydev.io (e.g., internal.test.digitalekanaler.vydev.io)
-  service_connect_namespace_name = var.environment == "prod" ? "internal.digitalekanaler.vydev.io" : "internal.${var.environment}.digitalekanaler.vydev.io"
-  service_connect_client_aliases = var.service_connect_client_aliases != null ? var.service_connect_client_aliases : [
+  service_connect_namespace = var.environment == "prod" ? "internal.digitalekanaler.vydev.io" : "internal.${var.environment}.digitalekanaler.vydev.io"
+
+  service_connect_client_aliases = [
     {
       port     = var.port
-      dns_name = "${var.name}.${local.service_connect_namespace_name}"
+      dns_name = "${var.name}.${local.service_connect_namespace}"
     }
   ]
+  service_connect_configuration = var.service_connect_configuration.enabled ? merge(
+    var.service_connect_configuration,
+    {
+      namespace = var.service_connect_configuration.namespace != null ? var.service_connect_configuration.namespace : local.service_connect_namespace
+      client_aliases = var.service_connect_configuration.client_aliases != null ? var.service_connect_configuration.client_aliases : local.service_connect_client_aliases
+    }
+  ) : null
+
 }
 
 #########################################
@@ -38,7 +45,8 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=3.0.0"
+  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=add-support-for-service-connect"
+
   depends_on                      = [terraform_data.no_spot_in_prod]
   service_name                    = local.name_with_prefix
   vpc_id                          = local.shared_config.vpc_id
@@ -68,7 +76,7 @@ module "task" {
   application_container = {
     name      = local.name_with_prefix
     port      = var.port
-    port_name = var.service_connect_port_name
+    port_name = local.name_with_prefix
     protocol  = "HTTP"
     cpu       = local.application_cpu
     image     = var.image
@@ -141,6 +149,10 @@ module "task" {
   propagate_tags = "TASK_DEFINITION"
 
   lb_stickiness = var.lb_stickiness
+
+  service_connect_configuration   = local.service_connect_configuration
+
+  enable_execute_command          = var.enable_execute_command
 }
 
 #########################################
@@ -159,54 +171,6 @@ resource "aws_kms_alias" "application_key_alias" {
 
 data "aws_kms_alias" "common_config_key" {
   name = "alias/common_config_key"
-}
-
-#########################################
-#                                       #
-# Service Connect Namespace             #
-#                                       #
-#########################################
-# Service Connect allows services to communicate directly without going through the ALB.
-# Services will be accessible at: <service-name>.internal.<environment>.digitalekanaler.vydev.io
-#
-# CURRENT LIMITATION: The terraform-aws-ecs-service module v3.0.0 does not support Service Connect yet.
-# This creates the namespace and prepares the configuration for when the module is updated.
-#
-# TODO: Update to a newer version of terraform-aws-ecs-service that supports service_connect_configuration
-# or add the configuration directly once the module supports it.
-
-# Try to look up existing namespace first (it should be shared across all services in the environment)
-data "aws_service_discovery_http_namespace" "service_connect_existing" {
-  count = var.enable_service_connect ? 1 : 0
-  name  = local.service_connect_namespace_name
-
-  lifecycle {
-    postcondition {
-      condition     = self.arn != null || self.arn == null
-      error_message = "Error looking up Service Connect namespace"
-    }
-  }
-}
-
-# Create namespace if it doesn't exist
-resource "aws_service_discovery_http_namespace" "service_connect" {
-  count       = var.enable_service_connect && try(data.aws_service_discovery_http_namespace.service_connect_existing[0].arn, null) == null ? 1 : 0
-  name        = local.service_connect_namespace_name
-  description = "Service Connect namespace for ${var.environment} environment - shared across all services"
-
-  tags = {
-    Environment = var.environment
-    ManagedBy   = "terraform"
-  }
-}
-
-locals {
-  # Use existing namespace if found, otherwise use the newly created one
-  service_connect_namespace_arn = var.enable_service_connect ? (
-    try(data.aws_service_discovery_http_namespace.service_connect_existing[0].arn, null) != null
-    ? data.aws_service_discovery_http_namespace.service_connect_existing[0].arn
-    : aws_service_discovery_http_namespace.service_connect[0].arn
-  ) : null
 }
 
 
