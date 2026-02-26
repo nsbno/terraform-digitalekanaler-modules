@@ -5,7 +5,6 @@ variable "name" {
 
 variable "name_prefix" {
   type    = string
-  default = "digitalekanaler"
 }
 
 variable "port" {
@@ -170,8 +169,8 @@ variable "health_check_override" {
 }
 
 variable "stop_timeout" {
-  type        = number
-  default     = null
+  type = number
+  default = null
   description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. If the parameter isn't specified, then the default value of 30 seconds is used. The maximum value is 120 seconds."
 }
 
