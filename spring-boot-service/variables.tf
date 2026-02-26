@@ -254,3 +254,10 @@ variable "datadog_team_name" {
   type        = string
   description = "The team name that is used in the 'team' tag in DataDog."
 }
+
+variable "datadog_service_name" {
+  type        = string
+  description = "The service name that is used in DataDog."
+  default     = null
+}
+
