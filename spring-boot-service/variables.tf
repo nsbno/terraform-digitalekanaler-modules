@@ -231,9 +231,9 @@ variable "service_timeouts" {
 
 variable "image" {
   type = object({
-    id                 = string
-    git_sha            = string
-    ecr_repository_uri = string
+    id                 = string # github-repository-name/working-directory (if any)
+    git_sha            = string # Image tag
+    ecr_repository_uri = string # ECR Repository URI
   })
   description = "Set using vy_ecs_image data source."
 }
