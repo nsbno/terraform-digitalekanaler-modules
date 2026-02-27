@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "name_prefix" {
-  type    = string
+  type = string
 }
 
 variable "port" {
@@ -169,8 +169,8 @@ variable "health_check_override" {
 }
 
 variable "stop_timeout" {
-  type = number
-  default = null
+  type        = number
+  default     = null
   description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. If the parameter isn't specified, then the default value of 30 seconds is used. The maximum value is 120 seconds."
 }
 
@@ -230,7 +230,12 @@ variable "service_timeouts" {
 }
 
 variable "image" {
-  description = "The ECR image for the ECS service to run."
+  type = object({
+    id                 = string
+    git_sha            = string
+    ecr_repository_uri = string
+  })
+  description = "Set using vy_ecs_image data source."
 }
 
 variable "rollback_window_in_minutes" {
