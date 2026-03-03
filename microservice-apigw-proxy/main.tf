@@ -32,3 +32,95 @@ resource "aws_apigatewayv2_integration" "this" {
     "overwrite:header.host" = var.domain_name
   }
 }
+
+
+# Rest api gateway resources
+data "aws_api_gateway_rest_api" "rest_apigw" {
+  name = "digitalekanaler-microservices-api"
+}
+
+data "aws_api_gateway_resource" "services" {
+  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  path        = "/services"
+}
+
+
+resource "aws_api_gateway_resource" "service" {
+  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  parent_id   = data.aws_api_gateway_resource.services.id
+  path_part   = var.service_name
+}
+
+resource "aws_api_gateway_resource" "service_proxy" {
+  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  parent_id   = aws_api_gateway_resource.service.id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "service_any" {
+  rest_api_id   = data.aws_api_gateway_rest_api.rest_apigw.id
+  resource_id   = aws_api_gateway_resource.service_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy"  = true,
+    "method.request.header.host" = true
+  }
+}
+
+resource "aws_api_gateway_integration" "service" {
+  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  resource_id = aws_api_gateway_resource.service_proxy.id
+  http_method = aws_api_gateway_method.service_any.http_method
+
+  type                    = "HTTP_PROXY"
+  integration_http_method = "ANY"
+  uri                     = "https://${var.domain_name}/{proxy}"
+  connection_type         = "VPC_LINK"
+  connection_id           = "0h63rx"
+
+  request_parameters = {
+    "integration.request.path.proxy"  = "method.request.path.proxy"
+    "integration.request.header.host" = "'${var.domain_name}'"
+  }
+  integration_target = var.internal_alb_arn
+}
+
+resource "aws_api_gateway_deployment" "rest_apigw" {
+  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      data.aws_api_gateway_resource.services.id,
+      aws_api_gateway_resource.service.id,
+      aws_api_gateway_resource.service_proxy.id,
+      aws_api_gateway_method.service_any.id,
+      aws_api_gateway_integration.service.id,
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "null_resource" "update_stage" {
+  triggers = {
+    deployment_id = aws_api_gateway_deployment.rest_apigw.id
+  }
+
+  provisioner "local-exec" {
+    command = <<EOF
+                if aws apigateway update-stage \
+                  --rest-api-id ${data.aws_api_gateway_rest_api.rest_apigw.id} \
+                  --stage-name rest_default \
+                  --patch-operations op=replace,path=/deploymentId,value=${aws_api_gateway_deployment.rest_apigw.id} 2>&1; then
+                  echo "SUCCESS: Stage 'rest_default' updated to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}"
+                else
+                  echo "ERROR: Failed to update stage 'rest_default' to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}" >&2
+                  exit 1
+                fi
+                EOF
+  }
+}

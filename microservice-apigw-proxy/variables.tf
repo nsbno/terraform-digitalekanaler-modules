@@ -13,6 +13,11 @@ variable "listener_arn" {
   type        = string
 }
 
+variable "internal_alb_arn" {
+  description = "AWS ALB  ARN"
+  type        = string
+}
+
 variable "context_path" {
   type        = string
   description = "An optional context path that will prefix all requests to the service. Must start with / if defined"
