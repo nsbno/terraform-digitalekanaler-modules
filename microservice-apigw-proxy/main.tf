@@ -7,15 +7,13 @@ data "aws_ssm_parameter" "vpc_link_id" {
 }
 
 resource "aws_apigatewayv2_route" "this" {
-  count     = var.remove_http_api_integration ? 0 : 1
   api_id    = data.aws_ssm_parameter.api_gw.value
   route_key = "ANY /services/${var.service_name}/{proxy+}"
 
-  target = "integrations/${aws_apigatewayv2_integration.this[0].id}"
+  target = "integrations/${aws_apigatewayv2_integration.this.id}"
 }
 
 resource "aws_apigatewayv2_integration" "this" {
-  count     = var.remove_http_api_integration ? 0 : 1
   api_id = data.aws_ssm_parameter.api_gw.value
 
   integration_type   = "HTTP_PROXY"
