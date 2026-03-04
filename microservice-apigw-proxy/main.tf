@@ -108,6 +108,8 @@ resource "aws_api_gateway_deployment" "rest_apigw" {
 resource "null_resource" "update_stage" {
   triggers = {
     deployment_id = aws_api_gateway_deployment.rest_apigw.id
+    rest_api_id   = data.aws_ssm_parameter.rest_api_gw.value
+    stage_name    = "rest_default"
   }
 
   provisioner "local-exec" {
@@ -122,5 +124,33 @@ resource "null_resource" "update_stage" {
                   exit 1
                 fi
                 EOF
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOF
+    echo "Creating new deployment to reflect removed service..."
+    NEW_DEPLOYMENT_ID=$(aws apigateway create-deployment \
+      --rest-api-id ${self.triggers.rest_api_id} \
+      --description "Redeployment after service removal" \
+      --query 'id' \
+      --output text)
+
+    if [ -z "$NEW_DEPLOYMENT_ID" ]; then
+      echo "ERROR: Failed to create new deployment" >&2
+      exit 1
+    fi
+
+    echo "Created new deployment: $NEW_DEPLOYMENT_ID"
+
+    if aws apigateway update-stage \
+      --rest-api-id ${self.triggers.rest_api_id} \
+      --stage-name ${self.triggers.stage_name} \
+      --patch-operations op=replace,path=/deploymentId,value=$NEW_DEPLOYMENT_ID; then
+      echo "SUCCESS: Stage '${self.triggers.stage_name}' updated to new deployment $NEW_DEPLOYMENT_ID"
+    else
+      echo "ERROR: Failed to update stage" >&2
+      exit 1
+    fi
+  EOF
   }
 }
