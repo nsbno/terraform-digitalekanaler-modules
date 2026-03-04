@@ -7,6 +7,7 @@ data "aws_ssm_parameter" "vpc_link_id" {
 }
 
 resource "aws_apigatewayv2_route" "this" {
+  count     = var.remove_http_api_integration ? 0 : 1
   api_id    = data.aws_ssm_parameter.api_gw.value
   route_key = "ANY /services/${var.service_name}/{proxy+}"
 
@@ -14,6 +15,7 @@ resource "aws_apigatewayv2_route" "this" {
 }
 
 resource "aws_apigatewayv2_integration" "this" {
+  count     = var.remove_http_api_integration ? 0 : 1
   api_id = data.aws_ssm_parameter.api_gw.value
 
   integration_type   = "HTTP_PROXY"
@@ -35,30 +37,30 @@ resource "aws_apigatewayv2_integration" "this" {
 
 
 # Rest api gateway resources
-data "aws_api_gateway_rest_api" "rest_apigw" {
-  name = "digitalekanaler-microservices-api"
+data "aws_ssm_parameter" "rest_api_gw" {
+  name = "/digitalekanaler/common-services/microservices-api/rest-api-id"
 }
 
 data "aws_api_gateway_resource" "services" {
-  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
   path        = "/services"
 }
 
 
 resource "aws_api_gateway_resource" "service" {
-  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
   parent_id   = data.aws_api_gateway_resource.services.id
   path_part   = var.service_name
 }
 
 resource "aws_api_gateway_resource" "service_proxy" {
-  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
   parent_id   = aws_api_gateway_resource.service.id
   path_part   = "{proxy+}"
 }
 
 resource "aws_api_gateway_method" "service_any" {
-  rest_api_id   = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id   = data.aws_ssm_parameter.rest_api_gw.value
   resource_id   = aws_api_gateway_resource.service_proxy.id
   http_method   = "ANY"
   authorization = "NONE"
@@ -70,7 +72,7 @@ resource "aws_api_gateway_method" "service_any" {
 }
 
 resource "aws_api_gateway_integration" "service" {
-  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
   resource_id = aws_api_gateway_resource.service_proxy.id
   http_method = aws_api_gateway_method.service_any.http_method
 
@@ -78,7 +80,7 @@ resource "aws_api_gateway_integration" "service" {
   integration_http_method = "ANY"
   uri                     = "https://${var.domain_name}/{proxy}"
   connection_type         = "VPC_LINK"
-  connection_id           = "0h63rx"
+  connection_id           = data.aws_ssm_parameter.vpc_link_id.value
 
   request_parameters = {
     "integration.request.path.proxy"  = "method.request.path.proxy"
@@ -88,7 +90,7 @@ resource "aws_api_gateway_integration" "service" {
 }
 
 resource "aws_api_gateway_deployment" "rest_apigw" {
-  rest_api_id = data.aws_api_gateway_rest_api.rest_apigw.id
+  rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
 
   triggers = {
     redeployment = sha1(jsonencode([
@@ -113,7 +115,7 @@ resource "null_resource" "update_stage" {
   provisioner "local-exec" {
     command = <<EOF
                 if aws apigateway update-stage \
-                  --rest-api-id ${data.aws_api_gateway_rest_api.rest_apigw.id} \
+                  --rest-api-id ${data.aws_ssm_parameter.rest_api_gw.value} \
                   --stage-name rest_default \
                   --patch-operations op=replace,path=/deploymentId,value=${aws_api_gateway_deployment.rest_apigw.id} 2>&1; then
                   echo "SUCCESS: Stage 'rest_default' updated to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}"
