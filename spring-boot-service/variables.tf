@@ -260,9 +260,3 @@ variable "datadog_service_name" {
   description = "The service name that is used in DataDog."
   default     = null
 }
-
-variable "remove_http_api_integration" {
-  description = "Remove the legacy HTTP API integration, and only use the new REST API."
-  type        = bool
-  default     = false
-}

@@ -207,7 +207,6 @@ module "api_gateway" {
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
   internal_alb_arn = local.shared_config.lb_internal_arn
-  remove_http_api_integration = var.remove_http_api_integration
 }
 
 
