@@ -41,6 +41,10 @@ data "aws_ssm_parameter" "rest_api_gw" {
   name = "/digitalekanaler/common-services/microservices-api/rest-api-id"
 }
 
+data "aws_ssm_parameter" "rest_api_stage_name_gw" {
+  name = "/digitalekanaler/common-services/microservices-api/rest-api-stage-name"
+}
+
 data "aws_api_gateway_resource" "services" {
   rest_api_id = data.aws_ssm_parameter.rest_api_gw.value
   path        = "/services"
@@ -110,19 +114,17 @@ resource "aws_api_gateway_deployment" "rest_apigw" {
 resource "null_resource" "update_stage" {
   triggers = {
     deployment_id = aws_api_gateway_deployment.rest_apigw.id
-    rest_api_id   = data.aws_ssm_parameter.rest_api_gw.value
-    stage_name    = "rest_default"
   }
 
   provisioner "local-exec" {
     command = <<EOF
                 if aws apigateway update-stage \
                   --rest-api-id ${data.aws_ssm_parameter.rest_api_gw.value} \
-                  --stage-name rest_default \
+                  --stage-name ${data.aws_ssm_parameter.rest_api_stage_name_gw.value} \
                   --patch-operations op=replace,path=/deploymentId,value=${aws_api_gateway_deployment.rest_apigw.id} 2>&1; then
-                  echo "SUCCESS: Stage 'rest_default' updated to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}"
+                  echo "SUCCESS: Stage '${data.aws_ssm_parameter.rest_api_stage_name_gw.value}' updated to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}"
                 else
-                  echo "ERROR: Failed to update stage 'rest_default' to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}" >&2
+                  echo "ERROR: Failed to update stage '${data.aws_ssm_parameter.rest_api_stage_name_gw.value}' to deployment ID ${aws_api_gateway_deployment.rest_apigw.id}" >&2
                   exit 1
                 fi
                 EOF
