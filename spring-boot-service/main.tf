@@ -202,7 +202,7 @@ resource "aws_route53_record" "internal_vydev_io_record" {
 }
 
 module "api_gateway" {
-  source       = "github.com/nsbno/terraform-digitalekanaler-modules//microservice-apigw-proxy?ref=rest-api"
+  source       = "github.com/nsbno/terraform-digitalekanaler-modules//microservice-apigw-proxy?ref=3.0.0-rc10"
   service_name = local.api_gateway_path
   domain_name  = local.internal_domain_name
   listener_arn = local.shared_config.lb_internal_listener_arn
