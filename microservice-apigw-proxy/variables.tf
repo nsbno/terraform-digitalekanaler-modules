@@ -13,6 +13,11 @@ variable "listener_arn" {
   type        = string
 }
 
+variable "internal_alb_arn" {
+  description = "AWS ALB  ARN"
+  type        = string
+}
+
 variable "context_path" {
   type        = string
   description = "An optional context path that will prefix all requests to the service. Must start with / if defined"
@@ -23,3 +28,10 @@ variable "context_path" {
     error_message = "Context path must start with /."
   }
 }
+
+variable "remove_http_api_integration" {
+  description = "Remove the legacy HTTP API integration, and only use the new REST API."
+  type        = bool
+  default     = false
+}
+
