@@ -107,6 +107,7 @@ resource "aws_api_gateway_deployment" "rest_apigw" {
   }
 
   lifecycle {
+    ignore_changes = [deployment_id] # needed for preventing Terraform from reverting deployments triggered by external microservices
     create_before_destroy = true
   }
 }
