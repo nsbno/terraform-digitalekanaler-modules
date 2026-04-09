@@ -47,7 +47,7 @@ module "task" {
       DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
     },
     length(trimspace(var.extra_java_tool_options)) > 0 ? {
-      JAVA_TOOL_OPTIONS = "-javaagent:/datadog-instrumentation-init/package/dd-java-agent.jar ${var.extra_java_tool_options}"
+      JAVA_TOOL_OPTIONS = trim(var.extra_java_tool_options)
     } : {}
   )
   datadog_api_key_secret_arn = data.aws_secretsmanager_secret.datadog_api_key.arn
