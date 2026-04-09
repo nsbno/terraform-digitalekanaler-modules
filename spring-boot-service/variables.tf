@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "name_prefix" {
-  type    = string
+  type = string
 }
 
 variable "port" {
@@ -169,8 +169,8 @@ variable "health_check_override" {
 }
 
 variable "stop_timeout" {
-  type = number
-  default = null
+  type        = number
+  default     = null
   description = "Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own. If the parameter isn't specified, then the default value of 30 seconds is used. The maximum value is 120 seconds."
 }
 
@@ -259,6 +259,16 @@ variable "datadog_service_name" {
   type        = string
   description = "The service name that is used in DataDog."
   default     = null
+}
+
+variable "datadog_environment_variables" {
+  type        = map(string)
+  description = "Additional environment variables to set for the Datadog Agent Extension."
+  default = {
+    DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
+    DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
+    DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+  }
 }
 
 variable "remove_http_api_integration" {
