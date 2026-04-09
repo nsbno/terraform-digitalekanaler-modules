@@ -40,16 +40,11 @@ module "task" {
   datadog_instrumentation_runtime = "jvm" # Can be jvm or node
   team_name_override              = var.datadog_team_name
   dd_service_name_override        = var.datadog_service_name
-  datadog_environment_variables = merge(
-    {
-      DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
-      DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
-      DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
-    },
-    length(trimspace(var.extra_java_tool_options)) > 0 ? {
-      JAVA_TOOL_OPTIONS = trimspace(var.extra_java_tool_options)
-    } : {}
-  )
+  datadog_environment_variables = {
+    DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
+    DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
+    DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+  }
   datadog_api_key_secret_arn = data.aws_secretsmanager_secret.datadog_api_key.arn
 
   rollback_window_in_minutes        = var.rollback_window_in_minutes
