@@ -12,17 +12,18 @@ variable "refresh_token_validity" {
 
 
 variable "token_validity_units" {
-  description = "Time units for token validity."
+  description = "Time units for token validity. Set to null to omit the block entirely."
   type = object({
-    access_token  = optional(string)
-    id_token      = optional(string)
-    refresh_token = optional(string)
+    access_token  = optional(string, "hours")
+    id_token      = optional(string, "hours")
+    refresh_token = optional(string, "days")
   })
 
-  default = {}
+  # Defaulting to null makes the entire object optional
+  default = null
 
   validation {
-    condition = alltrue([
+    condition = var.token_validity_units == null ? true : alltrue([
       for unit in values(var.token_validity_units) :
       contains(["seconds", "minutes", "hours", "days"], unit)
     ])

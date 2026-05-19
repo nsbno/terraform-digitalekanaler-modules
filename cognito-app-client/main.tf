@@ -17,9 +17,16 @@ resource "aws_cognito_user_pool_client" "this" {
 
   refresh_token_validity = var.refresh_token_validity
 
-  token_validity_units {
-    access_token  = var.token_validity_units.access_token
-    id_token      = var.token_validity_units.id_token
-    refresh_token = var.token_validity_units.refresh_token
+  dynamic "token_validity_units" {
+    # If null, return an empty list [], rendering the block 0 times.
+    # If provided, return a list with one item, rendering the block 1 time.
+    for_each = var.token_validity_units != null ? [var.token_validity_units] : []
+
+    content {
+      # 'token_validity_units.value' refers to the current item in the for_each loop
+      access_token  = token_validity_units.value.access_token
+      id_token      = token_validity_units.value.id_token
+      refresh_token = token_validity_units.value.refresh_token
+    }
   }
 }
