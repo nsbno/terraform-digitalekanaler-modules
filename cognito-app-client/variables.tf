@@ -13,11 +13,11 @@ variable "refresh_token_validity" {
 
 variable "token_validity_units" {
   description = "Time units for token validity."
-  type = object({
+  type = optional(object({
     access_token  = optional(string, "hours")
     id_token      = optional(string, "hours")
     refresh_token = optional(string, "days")
-  })
+  }), object({}))
 
   # Validates that any provided values exactly match the allowed strings
   validation {
