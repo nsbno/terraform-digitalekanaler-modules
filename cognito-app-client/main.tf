@@ -17,5 +17,9 @@ resource "aws_cognito_user_pool_client" "this" {
 
   refresh_token_validity = var.refresh_token_validity
 
-  token_validity_units = var.token_validity_units
+  token_validity_units {
+    access_token  = var.token_validity_units.access_token
+    id_token      = var.token_validity_units.id_token
+    refresh_token = var.token_validity_units.refresh_token
+  }
 }

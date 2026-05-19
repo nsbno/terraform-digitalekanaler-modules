@@ -14,9 +14,9 @@ variable "refresh_token_validity" {
 variable "token_validity_units" {
   description = "Time units for token validity."
   type = object({
-    access_token  = optional(string, "hours")
-    id_token      = optional(string, "hours")
-    refresh_token = optional(string, "days")
+    access_token  = optional(string, null)
+    id_token      = optional(string, null)
+    refresh_token = optional(string, null)
   })
 
   default = {}
@@ -24,7 +24,7 @@ variable "token_validity_units" {
   validation {
     condition = alltrue([
       for unit in values(var.token_validity_units) :
-      contains(["seconds", "minutes", "hours", "days"], unit)
+      contains(["seconds", "minutes", "hours", "days", null], unit)
     ])
     error_message = "Valid values for token validity units are: seconds, minutes, hours, or days."
   }
