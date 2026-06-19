@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=3.1.0"
+  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=reservation-cpu-memory"
   depends_on                      = [terraform_data.no_spot_in_prod]
   service_name                    = local.name_with_prefix
   vpc_id                          = local.shared_config.vpc_id
