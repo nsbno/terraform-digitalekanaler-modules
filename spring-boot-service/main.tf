@@ -40,6 +40,7 @@ module "task" {
   datadog_instrumentation_runtime = "jvm" # Can be jvm or node
   team_name_override              = var.datadog_team_name
   dd_service_name_override        = var.datadog_service_name
+  datadog_options                 = var.datadog_options
   datadog_environment_variables = {
     DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
     DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
