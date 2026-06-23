@@ -27,7 +27,7 @@ resource "terraform_data" "no_spot_in_prod" {
 }
 
 module "task" {
-  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=3.1.0"
+  source                          = "github.com/nsbno/terraform-aws-ecs-service?ref=3.4.0"
   depends_on                      = [terraform_data.no_spot_in_prod]
   service_name                    = local.name_with_prefix
   vpc_id                          = local.shared_config.vpc_id
@@ -40,6 +40,7 @@ module "task" {
   datadog_instrumentation_runtime = "jvm" # Can be jvm or node
   team_name_override              = var.datadog_team_name
   dd_service_name_override        = var.datadog_service_name
+  datadog_options                 = var.datadog_options
   datadog_environment_variables = {
     DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
     DD_CHECKS_TAG_CARDINALITY      = "orchestrator"

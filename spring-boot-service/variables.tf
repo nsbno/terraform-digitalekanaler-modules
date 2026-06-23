@@ -272,3 +272,18 @@ variable "remove_http_api_integration" {
   type        = bool
   default     = false
 }
+
+variable "datadog_options" {
+  description = "Options for the Datadog Agent Extension. Include the properties you want to modify, the others will use a default value"
+  type = object({
+    trace_startup_logs                    = optional(bool)
+    trace_partial_flush_min_spans         = optional(number)
+    profiling_enabled                     = optional(bool)
+    apm_enabled                           = optional(bool)
+    appsec_enabled                        = optional(bool)
+    runtime_code_analysis                 = optional(bool)
+    runtime_software_composition_analysis = optional(bool)
+    app_protection_enabled                = optional(bool)
+  })
+  default = {}
+}
