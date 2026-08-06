@@ -287,3 +287,9 @@ variable "datadog_options" {
   })
   default = {}
 }
+
+variable "is_preview_supported" {
+  description = "value"
+  type = bool
+  default = false
+}
