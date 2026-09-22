@@ -273,6 +273,18 @@ variable "remove_http_api_integration" {
   default     = false
 }
 
+variable "api_gateway_response_transfer_mode" {
+  description = "Optional response transfer mode for the REST API Gateway integration."
+  type        = string
+  default     = null
+}
+
+variable "api_gateway_timeout_milliseconds" {
+  description = "Optional timeout, in milliseconds, for the REST API Gateway integration."
+  type        = number
+  default     = null
+}
+
 variable "datadog_options" {
   description = "Options for the Datadog Agent Extension. Include the properties you want to modify, the others will use a default value"
   type = object({

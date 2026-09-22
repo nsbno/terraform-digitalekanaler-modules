@@ -35,3 +35,14 @@ variable "remove_http_api_integration" {
   default     = false
 }
 
+variable "response_transfer_mode" {
+  description = "Optional response transfer mode for the REST API Gateway integration."
+  type        = string
+  default     = null
+}
+
+variable "timeout_milliseconds" {
+  description = "Optional timeout, in milliseconds, for the REST API Gateway integration."
+  type        = number
+  default     = null
+}

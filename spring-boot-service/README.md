@@ -55,6 +55,11 @@ module "spring_boot_service" {
 }
 ```
 
+Optional REST API Gateway integration tuning can be passed through this module with:
+
+- `api_gateway_response_transfer_mode`
+- `api_gateway_timeout_milliseconds`
+
 ## How we determined the CPU and memory limits for the containers
 
 The reason we want to set CPU and memory limits for the application container, log-router and datadog-agent is that fargate will distribute resources evenly if we do not. The trade off that is hard to determine is which of the containers we prioritze. On the one hand, we do not want the log-router and datadog-agent to use resources that our application needs to run. However, in the situations where we run out of resources, we need logs and metrics to determine the cause and prevent it from happening again.

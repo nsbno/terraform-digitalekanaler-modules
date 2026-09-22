@@ -85,6 +85,8 @@ resource "aws_api_gateway_integration" "service" {
   uri                     = "https://${var.domain_name}/{proxy}"
   connection_type         = "VPC_LINK"
   connection_id           = data.aws_ssm_parameter.vpc_link_id.value
+  response_transfer_mode  = var.response_transfer_mode
+  timeout_milliseconds    = var.timeout_milliseconds
 
   request_parameters = {
     "integration.request.path.proxy"  = "method.request.path.proxy"
