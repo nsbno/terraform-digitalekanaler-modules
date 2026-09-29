@@ -264,7 +264,7 @@ variable "datadog_service_name" {
 variable "extra_datadog_environment_variables" {
   type        = map(string)
   description = "Additional environment variables to set for the Datadog Agent Extension."
-  default     = null
+  default     = {}
 }
 
 variable "remove_http_api_integration" {
