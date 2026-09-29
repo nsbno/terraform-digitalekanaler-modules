@@ -264,7 +264,11 @@ variable "datadog_service_name" {
 variable "datadog_environment_variables" {
   type        = map(string)
   description = "Additional environment variables to set for the Datadog Agent Extension."
-  default     = {}
+  default = {
+    DD_DOGSTATSD_NON_LOCAL_TRAFFIC = "true"
+    DD_CHECKS_TAG_CARDINALITY      = "orchestrator"
+    DD_DOGSTATSD_TAG_CARDINALITY   = "orchestrator"
+  }
 }
 
 variable "remove_http_api_integration" {
@@ -290,6 +294,6 @@ variable "datadog_options" {
 
 variable "is_preview_supported" {
   description = "value"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
