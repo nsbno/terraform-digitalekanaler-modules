@@ -215,6 +215,13 @@ variable "lb_unhealthy_threshold" {
   description = "Number of consecutive health check failures required by the load balancer before considering a target unhealthy. The range is 2-10. Defaults to 3."
 }
 
+variable "lb_timeout" {
+  type        = number
+  default     = 10
+  description = "The amount of time, in seconds, that the load balancer waits for a response from a target before considering the request failed."
+}
+
+
 variable "service_timeouts" {
   type = object({
     create = optional(string)
