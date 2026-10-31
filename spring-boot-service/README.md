@@ -10,6 +10,19 @@ What you get from the module:
 - Monitoring of your service in Datadog
 - A KMS key that you can use for application specific encryption (mostly used for SSM parameters)
 
+## Health checks
+
+The module supports separate HTTP paths for the ECS container health check and the load balancer health check. Both default to `/health`, preserving the existing behavior.
+
+Configure them independently when the application exposes separate liveness and readiness endpoints:
+
+```hcl
+container_health_check_path = "/actuator/health/liveness"
+lb_health_check_path        = "/actuator/health/readiness"
+```
+
+ECS runs the container health check from inside the application container; it is commonly used as a liveness check. The load balancer health check determines whether a task is eligible to receive traffic; it is commonly used as a readiness check. Both checks use the service's configured `port`. The ECS container health check is only enabled when `health_check_override` is not `null`.
+
 ## Example
 
 ```hcl
