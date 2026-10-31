@@ -168,6 +168,18 @@ variable "health_check_override" {
   description = "Override default health check parameters. This adds health check in ECS in addition to the load balancer, and can speed up your deployment"
 }
 
+variable "container_health_check_path" {
+  type        = string
+  default     = "/health"
+  description = "HTTP path that ECS calls from inside the application container to determine whether the container is healthy. This is commonly configured as a liveness endpoint, for example /actuator/health/liveness. The check uses var.port and is only created when health_check_override is not null."
+}
+
+variable "lb_health_check_path" {
+  type        = string
+  default     = "/health"
+  description = "HTTP path that the load balancer calls to determine whether the task should receive traffic. This is commonly configured as a readiness endpoint, for example /actuator/health/readiness. The check uses var.port."
+}
+
 variable "stop_timeout" {
   type        = number
   default     = null
