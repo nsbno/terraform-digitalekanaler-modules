@@ -73,7 +73,7 @@ module "task" {
       retries : 5,
       command : [
         "CMD-SHELL",
-        "wget --no-verbose --tries=1 --spider http://localhost:${var.port}/health || exit 1"
+        "wget --no-verbose --tries=1 --spider http://localhost:${var.port}${var.container_health_check_path} || exit 1"
       ],
       timeout : var.health_check_override.timeout,
       interval : var.health_check_override.interval,
@@ -97,7 +97,7 @@ module "task" {
   autoscaling_policies               = var.autoscaling_policies
   lb_health_check = {
     port                = var.port
-    path                = "/health"
+    path                = var.lb_health_check_path
     interval            = 30
     healthy_threshold   = var.lb_healthy_threshold
     unhealthy_threshold = var.lb_unhealthy_threshold
